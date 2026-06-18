@@ -1,0 +1,9 @@
+{
+  "name": "@warden/sdk",
+  "version": "0.1.0",
+  "description": "Typed client for the Warden Policy Decision Point.",
+  "type": "module",
+  "main": "index.ts",
+  "types": "index.ts",
+  "license": "MIT"
+}
