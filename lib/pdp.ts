@@ -1,0 +1,162 @@
+/**
+ * The PDP service layer: the write paths (decide, revoke) and read paths
+ * (decisions, ledger) the API and UI call.
+ *
+ * `decide` runs the grant/SoD read, the engine evaluation, the decision write,
+ * and the chained ledger append in ONE retryable transaction. The ledger's
+ * unique seq index turns concurrent appends into OCC conflicts that withRetry
+ * resolves — so the chain stays gap-free and ordered without a sequence object.
+ */
+import { randomUUID } from "node:crypto";
+import { getPool, withRetry } from "./db";
+import { evaluate } from "./engine";
+import { DsqlStore } from "./store-dsql";
+import { GENESIS, linkHash, verifyChain, type LedgerRow, type VerifyResult } from "./ledger";
+import { buildLedgerPayload } from "./payload";
+import type { DecisionInput, EvaluationResult, Verdict } from "./types";
+
+export interface DecideOutput extends EvaluationResult {
+  requestId: string;
+  /** True when this requestId was already decided and the stored verdict was replayed. */
+  idempotentReplay: boolean;
+}
+
+export async function decide(input: DecisionInput): Promise<DecideOutput> {
+  return withRetry(async (client) => {
+    const existing = await client.query(
+      "SELECT verdict, reason, evaluated_context FROM decisions WHERE request_id = $1",
+      [input.requestId],
+    );
+    const prior = existing.rows[0];
+    if (prior) {
+      const ctx = prior.evaluated_context ?? {};
+      return {
+        requestId: input.requestId,
+        verdict: prior.verdict as Verdict,
+        reason: String(prior.reason),
+        firedRuleIds: Array.isArray(ctx.firedRuleIds) ? ctx.firedRuleIds : [],
+        evaluatedContext: ctx,
+        idempotentReplay: true,
+      };
+    }
+
+    const result = await evaluate(input, new DsqlStore(client));
+
+    await client.query(
+      `INSERT INTO decisions
+         (id, request_id, actor, action_type, resource, amount, verdict, reason, evaluated_context)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       ON CONFLICT (request_id) DO NOTHING`,
+      [
+        randomUUID(),
+        input.requestId,
+        input.actor,
+        input.actionType,
+        input.resource,
+        String(input.amount),
+        result.verdict,
+        result.reason,
+        JSON.stringify({ ...result.evaluatedContext, firedRuleIds: result.firedRuleIds }),
+      ],
+    );
+
+    const tip = await client.query("SELECT seq, hash FROM ledger ORDER BY seq DESC LIMIT 1");
+    const tipRow = tip.rows[0];
+    const prevSeq = tipRow ? Number(tipRow.seq) : -1;
+    const prevHash = tipRow ? String(tipRow.hash) : GENESIS;
+    const seq = prevSeq + 1;
+    const payload = buildLedgerPayload(input, result);
+    const hash = linkHash(prevHash, payload);
+
+    await client.query(
+      `INSERT INTO ledger (id, seq, request_id, prev_hash, payload, hash)
+       VALUES ($1,$2,$3,$4,$5,$6)
+       ON CONFLICT (request_id) DO NOTHING`,
+      [randomUUID(), String(seq), input.requestId, prevHash, JSON.stringify(payload), hash],
+    );
+
+    return { requestId: input.requestId, ...result, idempotentReplay: false };
+  });
+}
+
+export async function revokeGrant(grantId: string): Promise<{ id: string; revokedAt: string }> {
+  return withRetry(async (client) => {
+    const updated = await client.query(
+      "UPDATE authority_grants SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL RETURNING id, revoked_at",
+      [grantId],
+    );
+    const row = updated.rows[0];
+    if (row) return { id: String(row.id), revokedAt: String(row.revoked_at) };
+
+    const current = await client.query("SELECT id, revoked_at FROM authority_grants WHERE id = $1", [grantId]);
+    const curRow = current.rows[0];
+    if (!curRow) throw new Error(`Grant ${grantId} not found`);
+    return { id: String(curRow.id), revokedAt: String(curRow.revoked_at) };
+  });
+}
+
+export interface DecisionRow {
+  requestId: string;
+  actor: string;
+  actionType: string;
+  resource: string;
+  amount: number;
+  verdict: Verdict;
+  reason: string;
+  evaluatedContext: unknown;
+  createdAt: string;
+}
+
+export async function getRecentDecisions(limit = 50): Promise<DecisionRow[]> {
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    `SELECT request_id, actor, action_type, resource, amount, verdict, reason, evaluated_context, created_at
+       FROM decisions ORDER BY created_at DESC LIMIT $1`,
+    [limit],
+  );
+  return rows.map((r) => ({
+    requestId: String(r.request_id),
+    actor: String(r.actor),
+    actionType: String(r.action_type),
+    resource: String(r.resource),
+    amount: Number(r.amount),
+    verdict: r.verdict as Verdict,
+    reason: String(r.reason),
+    evaluatedContext: r.evaluated_context,
+    createdAt: String(r.created_at),
+  }));
+}
+
+export interface LedgerView extends LedgerRow {
+  requestId: string;
+  createdAt: string;
+}
+
+export async function getLedger(limit = 200): Promise<LedgerView[]> {
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    `SELECT seq, request_id, prev_hash, payload, hash, created_at
+       FROM ledger ORDER BY seq ASC LIMIT $1`,
+    [limit],
+  );
+  return rows.map((r) => ({
+    seq: Number(r.seq),
+    prevHash: String(r.prev_hash),
+    payload: r.payload as object,
+    hash: String(r.hash),
+    requestId: String(r.request_id),
+    createdAt: String(r.created_at),
+  }));
+}
+
+export async function verifyLedger(): Promise<VerifyResult> {
+  const pool = await getPool();
+  const { rows } = await pool.query("SELECT seq, prev_hash, payload, hash FROM ledger ORDER BY seq ASC");
+  const ledger: LedgerRow[] = rows.map((r) => ({
+    seq: Number(r.seq),
+    prevHash: String(r.prev_hash),
+    payload: r.payload as object,
+    hash: String(r.hash),
+  }));
+  return verifyChain(ledger);
+}
