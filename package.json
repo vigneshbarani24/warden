@@ -8,14 +8,25 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "provision": "tsx scripts/provision.ts",
+    "health": "tsx scripts/health.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:verify": "tsx scripts/verify-chain.ts",
     "seed": "tsx scripts/seed.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@types/pg": "^8.20.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dsql": "^3.1071.0",
+    "@aws-sdk/dsql-signer": "^3.1071.0",
+    "@vercel/functions": "^3.7.1",
+    "@vercel/oidc-aws-credentials-provider": "^3.1.4",
+    "dotenv": "^17.4.2",
+    "pg": "^8.21.0"
   }
 }
