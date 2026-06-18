@@ -160,3 +160,46 @@ export async function verifyLedger(): Promise<VerifyResult> {
   }));
   return verifyChain(ledger);
 }
+
+export interface GrantView {
+  id: string;
+  principalId: string;
+  orgPath: string;
+  actionType: string;
+  approvalLimit: number;
+  validFrom: string;
+  validTo: string;
+  revokedAt: string | null;
+  active: boolean;
+}
+
+export async function getGrants(principalId?: string): Promise<GrantView[]> {
+  const pool = await getPool();
+  const { rows } = principalId
+    ? await pool.query(
+        `SELECT id, principal_id, org_path, action_type, approval_limit, valid_from, valid_to, revoked_at
+           FROM authority_grants WHERE principal_id = $1 ORDER BY org_path`,
+        [principalId],
+      )
+    : await pool.query(
+        `SELECT id, principal_id, org_path, action_type, approval_limit, valid_from, valid_to, revoked_at
+           FROM authority_grants ORDER BY principal_id, org_path`,
+      );
+  const now = Date.now();
+  return rows.map((r) => {
+    const validFrom = new Date(r.valid_from);
+    const validTo = new Date(r.valid_to);
+    const revokedAt = r.revoked_at ? new Date(r.revoked_at) : null;
+    return {
+      id: String(r.id),
+      principalId: String(r.principal_id),
+      orgPath: String(r.org_path),
+      actionType: String(r.action_type),
+      approvalLimit: Number(r.approval_limit),
+      validFrom: validFrom.toISOString(),
+      validTo: validTo.toISOString(),
+      revokedAt: revokedAt ? revokedAt.toISOString() : null,
+      active: !revokedAt && validFrom.getTime() <= now && validTo.getTime() > now,
+    };
+  });
+}
