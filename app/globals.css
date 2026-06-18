@@ -1,0 +1,39 @@
+/* Warden design tokens — "vellum, ink, and wax seal," cooled and modern.
+   Semantic verdict colors are load-bearing, never decorative. */
+:root {
+  --paper: #eef1f0; /* cool bone base */
+  --ink: #14171a; /* near-black, cool cast */
+  --seal: #6e1d24; /* oxblood — primary actions, chain seals, authority accent */
+  --panel: #e3e7e6; /* inked surface behind monospace data */
+  --line: #c9cfcd; /* hairline rules */
+  --allow: #1f7a4d;
+  --deny: #b0271f;
+  --escalate: #b5790a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+}
+
+code,
+.mono {
+  font-family: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
