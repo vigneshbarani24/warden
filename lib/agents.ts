@@ -20,11 +20,11 @@ interface Template {
 // Actors/limits mirror the seed: amounts sometimes exceed limits (-> escalate);
 // the last template has no grant (-> deny, an agent self-escalation blocked).
 const TEMPLATES: Template[] = [
-  { actor: "priya.nair", agent: "AP Agent", actionType: "approve_payment", orgPath: "/root/finance/p2p/", resourcePrefix: "INV", min: 100_000, max: 8_000_000 },
-  { actor: "sofia.reyes", agent: "O2C Agent", actionType: "approve_discount", orgPath: "/root/finance/o2c/", resourcePrefix: "ORD", min: 10_000, max: 700_000 },
-  { actor: "aisha.khan", agent: "T&E Agent", actionType: "approve_expense", orgPath: "/root/finance/te/", resourcePrefix: "EXP", min: 1_000, max: 80_000 },
-  { actor: "leo.tanaka", agent: "MDM Agent", actionType: "update_master_data", orgPath: "/root/finance/mdm/", resourcePrefix: "MD", min: 0, max: 0 },
-  { actor: "ap-agent", agent: "AP Agent", actionType: "grant_privilege", orgPath: "/root/finance/p2p/", resourcePrefix: "ROLE", min: 0, max: 0 },
+  { actor: "maya.chen", agent: "Crude Desk Agent", actionType: "capture_trade", orgPath: "/global/trading/crude/", resourcePrefix: "DEAL-CR", min: 500_000, max: 8_000_000 },
+  { actor: "raj.patel", agent: "Products Desk Agent", actionType: "capture_trade", orgPath: "/global/trading/products/", resourcePrefix: "DEAL-PR", min: 200_000, max: 4_000_000 },
+  { actor: "liam.obrien", agent: "Gas Desk Agent", actionType: "capture_trade", orgPath: "/global/trading/gas/", resourcePrefix: "DEAL-NG", min: 200_000, max: 5_000_000 },
+  { actor: "sam.rivera", agent: "Settlement Agent", actionType: "approve_settlement", orgPath: "/global/trading/crude/", resourcePrefix: "DEAL-CR", min: 500_000, max: 12_000_000 },
+  { actor: "gas-desk-agent", agent: "Gas Desk Agent", actionType: "capture_trade", orgPath: "/global/trading/gas/", resourcePrefix: "DEAL-NG", min: 0, max: 0 },
 ];
 
 function roundedAmount(min: number, max: number): number {

@@ -1,57 +1,58 @@
 /**
- * Seed the demo world for "Meridian Refining Co." (fictional) — a finance
- * operation run across BPO towers, mirroring the SHAPE of a real outsourcing
- * Schedule A (Roles & Responsibilities Matrix + Segregation-of-Duty controls).
- * All names/values are fictional.
+ * Seed the demo world: a global hydrocarbon trading operation (fictional
+ * "Global Trading"), mirroring the real commodity-trading control framework —
+ * trader mandates, position/credit/deal limits, and front/middle/back-office
+ * segregation of duties. Names/values are fictional; the SHAPE is authentic
+ * (RightAngle-style deal lifecycle; the Barings/SocGen control model).
  *
  *   npm run seed
- *
- * Seeds: org towers, an R&R-matrix of authority grants, SoD policy rules, and a
- * starter stream of agentic decisions across towers (allow / escalate / deny).
  */
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { getPool, withRetry } from "../lib/db";
 import { decide } from "../lib/pdp";
 
-const PRIYA_GRANT = "11111111-1111-4111-8111-111111111111"; // fixed id so the demo can revoke it
+const LONDON_GAS_MANDATE = "11111111-1111-4111-8111-111111111111"; // fixed id — the revoke demo
 const FROM = "2026-01-01T00:00:00Z";
 const TO = "2027-01-01T00:00:00Z";
 
 const ORG: Array<[string, string, string]> = [
-  ["/root/", "Meridian Refining Co.", "company"],
-  ["/root/finance/", "Finance Operations", "division"],
-  ["/root/finance/p2p/", "Procure-to-Pay", "tower"],
-  ["/root/finance/o2c/", "Order-to-Cash", "tower"],
-  ["/root/finance/mdm/", "Master Reference Data", "tower"],
-  ["/root/finance/te/", "Travel & Expense", "tower"],
-  ["/root/finance/rtr/", "Record-to-Report", "tower"],
-  ["/root/finance/kyc/", "Know Your Counterparty", "tower"],
+  ["/global/", "Global Trading", "firm"],
+  ["/global/trading/", "Front Office — Trading", "division"],
+  ["/global/trading/crude/", "Crude Desk", "desk"],
+  ["/global/trading/products/", "Refined Products Desk", "desk"],
+  ["/global/trading/gas/", "Natural Gas Desk", "desk"],
+  ["/global/risk/", "Middle Office — Risk", "division"],
+  ["/global/ops/", "Operations", "division"],
+  ["/global/ops/scheduling/", "Scheduling", "team"],
+  ["/global/backoffice/", "Back Office — Settlements", "division"],
 ];
 
 // [id, principal, orgPath, actionType, approvalLimit]
 const GRANTS: Array<[string, string, string, string, string]> = [
-  [PRIYA_GRANT, "priya.nair", "/root/finance/p2p/", "approve_payment", "5000000"],
-  [randomUUID(), "marcus.cole", "/root/finance/", "approve_payment", "20000000"],
-  [randomUUID(), "elena.vasquez", "/root/", "approve_payment", "100000000"],
-  [randomUUID(), "dan.ortiz", "/root/finance/p2p/", "create_vendor", "0"],
-  [randomUUID(), "dan.ortiz", "/root/finance/p2p/", "approve_vendor_invoice", "1000000"],
-  [randomUUID(), "leo.tanaka", "/root/finance/mdm/", "change_vendor_bank", "0"],
-  [randomUUID(), "leo.tanaka", "/root/finance/mdm/", "update_master_data", "0"],
-  [randomUUID(), "leo.tanaka", "/root/finance/p2p/", "approve_payment", "2000000"],
-  [randomUUID(), "sofia.reyes", "/root/finance/o2c/", "approve_discount", "500000"],
-  [randomUUID(), "sofia.reyes", "/root/finance/o2c/", "approve_credit_override", "1000000"],
-  [randomUUID(), "aisha.khan", "/root/finance/te/", "approve_expense", "50000"],
-  [randomUUID(), "tomas.berg", "/root/finance/te/", "submit_expense", "100000"],
-  [randomUUID(), "tomas.berg", "/root/finance/te/", "approve_expense", "50000"],
+  // Front office — trader mandates (desk-scoped)
+  [randomUUID(), "maya.chen", "/global/trading/crude/", "capture_trade", "5000000"],
+  [randomUUID(), "maya.chen", "/global/trading/crude/", "approve_settlement", "5000000"], // enables the SoD demo
+  [randomUUID(), "raj.patel", "/global/trading/products/", "capture_trade", "2000000"],
+  [LONDON_GAS_MANDATE, "liam.obrien", "/global/trading/gas/", "capture_trade", "3000000"], // the revoke demo
+  // Desk head — broad approval authority across the front office
+  [randomUUID(), "dana.kessler", "/global/trading/", "approve_settlement", "50000000"],
+  [randomUUID(), "dana.kessler", "/global/trading/", "approve_confirmation", "50000000"],
+  // Back office — settlement authority firm-wide, but NO trade capture
+  [randomUUID(), "sam.rivera", "/global/trading/", "approve_settlement", "10000000"],
+  // Middle office — counterparty onboarding (independent of trading)
+  [randomUUID(), "nadia.haddad", "/global/", "approve_counterparty", "0"],
+  // CRO — escalation ceiling
+  [randomUUID(), "victor.hale", "/global/", "override_credit_limit", "250000000"],
+  [randomUUID(), "victor.hale", "/global/", "approve_settlement", "250000000"],
 ];
 
 // [code, conflicting action pair]
 const RULES: Array<[string, string[]]> = [
-  ["SOD-P2P-07", ["create_vendor", "approve_vendor_invoice"]],
-  ["SOD-MDM-04", ["change_vendor_bank", "approve_payment"]],
-  ["SOD-OTC-02", ["create_customer", "approve_credit_override"]],
-  ["SOD-TE-01", ["submit_expense", "approve_expense"]],
+  ["SOD-FBO-01", ["capture_trade", "approve_settlement"]], // front/back wall — the Leeson rule
+  ["SOD-DEAL-02", ["capture_trade", "approve_confirmation"]], // can't confirm your own deal
+  ["SOD-CPTY-03", ["approve_counterparty", "capture_trade"]], // onboard vs trade the counterparty
+  ["SOD-CREDIT-04", ["override_credit_limit", "capture_trade"]], // self-override credit to fit a trade
 ];
 
 async function main(): Promise<void> {
@@ -90,25 +91,20 @@ async function main(): Promise<void> {
     }
   });
 
-  // Starter agentic decisions across towers — a believable, diverse history.
+  // Starter agentic decisions across the trade lifecycle.
   const run = (actor: string, agent: string, actionType: string, resource: string, amount: number, orgPath: string) =>
     decide({ requestId: randomUUID(), actor, actionType, resource, amount, orgPath, context: { agent } });
 
-  await run("priya.nair", "AP Agent", "approve_payment", "INV-88421", 2_000_000, "/root/finance/p2p/"); // allow
-  await run("priya.nair", "AP Agent", "approve_payment", "INV-90233", 9_000_000, "/root/finance/p2p/"); // escalate
-  await run("dan.ortiz", "AP Agent", "create_vendor", "VEND-4471", 0, "/root/finance/p2p/"); // allow
-  await run("dan.ortiz", "AP Agent", "approve_vendor_invoice", "VEND-4471", 250_000, "/root/finance/p2p/"); // deny SoD
-  await run("leo.tanaka", "MDM Agent", "change_vendor_bank", "VEND-2210", 0, "/root/finance/mdm/"); // allow
-  await run("leo.tanaka", "MDM Agent", "approve_payment", "VEND-2210", 1_500_000, "/root/finance/p2p/"); // deny SoD
-  await run("sofia.reyes", "O2C Agent", "approve_discount", "ORD-7782", 120_000, "/root/finance/o2c/"); // allow
-  await run("sofia.reyes", "O2C Agent", "approve_credit_override", "CUST-559", 2_000_000, "/root/finance/o2c/"); // escalate
-  await run("aisha.khan", "T&E Agent", "approve_expense", "EXP-3391", 18_000, "/root/finance/te/"); // allow
-  await run("tomas.berg", "T&E Agent", "submit_expense", "EXP-7120", 42_000, "/root/finance/te/"); // allow
-  await run("tomas.berg", "T&E Agent", "approve_expense", "EXP-7120", 42_000, "/root/finance/te/"); // deny SoD
-  await run("o2c-agent", "O2C Agent", "grant_privilege", "ROLE-ADMIN", 0, "/root/finance/o2c/"); // deny no-authority
+  await run("maya.chen", "Crude Desk Agent", "capture_trade", "DEAL-CR-8801", 4_200_000, "/global/trading/crude/"); // allow
+  await run("raj.patel", "Products Desk Agent", "capture_trade", "DEAL-PR-5520", 2_500_000, "/global/trading/products/"); // escalate (> $2M)
+  await run("maya.chen", "Settlement Agent", "approve_settlement", "DEAL-CR-8801", 4_200_000, "/global/trading/crude/"); // deny SOD-FBO-01 (settling own captured deal)
+  await run("sam.rivera", "Settlement Agent", "approve_settlement", "DEAL-CR-8801", 4_200_000, "/global/trading/crude/"); // allow (back office, no conflict)
+  await run("nadia.haddad", "Onboarding Agent", "approve_counterparty", "CPTY-NORDIC-OIL", 0, "/global/"); // allow
+  await run("gas-desk-agent", "Gas Desk Agent", "capture_trade", "DEAL-NG-4410", 900_000, "/global/trading/gas/"); // deny (agent has no mandate)
+  await run("liam.obrien", "Gas Desk Agent", "capture_trade", "DEAL-NG-7702", 1_500_000, "/global/trading/gas/"); // allow (the mandate to be revoked)
 
-  console.log("Seeded Meridian Refining Co.: 8 org units, 13 grants, 4 SoD rules, 12 agentic decisions across towers.");
-  console.log(`Priya's approve_payment grant id (revoke for the demo): ${PRIYA_GRANT}`);
+  console.log("Seeded Global Trading: 9 org units, 10 mandates, 4 SoD rules, 7 agentic decisions across the trade lifecycle.");
+  console.log(`London gas-desk mandate id (revoke for the demo): ${LONDON_GAS_MANDATE}`);
   await (await getPool()).end();
 }
 

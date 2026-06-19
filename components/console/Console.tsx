@@ -151,6 +151,16 @@ export function Console() {
     }
   }, [refresh]);
 
+  const handleRunFleet = useCallback(async () => {
+    setBusy(true);
+    try {
+      await api.runFleet(12);
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  }, [refresh]);
+
   const sealState = (seq: number): string => {
     if (!verifyResult) return "";
     if (verifyResult.ok) return styles.sealVerified ?? "";
@@ -195,7 +205,7 @@ export function Console() {
         <main className={styles.main}>
           {view === "architecture" && <ArchitectureView />}
           {view === "flows" && <ProcessFlowsView decisions={decisions} />}
-          {view === "activity" && <ActivityView decisions={decisions} />}
+          {view === "activity" && <ActivityView decisions={decisions} onRun={handleRunFleet} running={busy} />}
 
           {view === "operations" && (
             <div className={styles.opsView}>
@@ -293,6 +303,70 @@ export function Console() {
                       </div>
 
                       <p className={styles.reason}>{selected.reason}</p>
+
+                      <div className={styles.sectionLabel} style={{ marginTop: "28px" }}>
+                        Decision trace
+                      </div>
+                      <div className={styles.trace}>
+                        <div className={styles.traceStep}>
+                          <span className={`${styles.traceIcon} ${(ctx.activeGrantCount ?? 0) > 0 ? styles.allow : styles.deny}`}>
+                            {(ctx.activeGrantCount ?? 0) > 0 ? "✓" : "✕"}
+                          </span>
+                          <span className={styles.traceLabel}>Authority</span>
+                          <span className={styles.traceDetail}>
+                            {(ctx.activeGrantCount ?? 0) > 0
+                              ? "active mandate resolved up the desk hierarchy"
+                              : "no active mandate"}
+                          </span>
+                        </div>
+                        <div className={styles.traceStep}>
+                          <span
+                            className={`${styles.traceIcon} ${
+                              (ctx.activeGrantCount ?? 0) === 0
+                                ? ""
+                                : selected.verdict === "escalate"
+                                  ? styles.escalate
+                                  : styles.allow
+                            }`}
+                          >
+                            {(ctx.activeGrantCount ?? 0) === 0 ? "·" : selected.verdict === "escalate" ? "▲" : "✓"}
+                          </span>
+                          <span className={styles.traceLabel}>Limit</span>
+                          <span className={styles.traceDetail}>
+                            {(ctx.activeGrantCount ?? 0) === 0
+                              ? "—"
+                              : `${money.format(selected.amount)} vs ${ctx.limitChecked != null ? money.format(ctx.limitChecked) : "—"} mandate`}
+                          </span>
+                        </div>
+                        <div className={styles.traceStep}>
+                          <span
+                            className={`${styles.traceIcon} ${
+                              ctx.sodResult === "conflict"
+                                ? styles.deny
+                                : (ctx.activeGrantCount ?? 0) === 0 || selected.verdict === "escalate"
+                                  ? ""
+                                  : styles.allow
+                            }`}
+                          >
+                            {ctx.sodResult === "conflict"
+                              ? "✕"
+                              : (ctx.activeGrantCount ?? 0) === 0 || selected.verdict === "escalate"
+                                ? "·"
+                                : "✓"}
+                          </span>
+                          <span className={styles.traceLabel}>Segregation of duties</span>
+                          <span className={styles.traceDetail}>
+                            {ctx.sodResult === "conflict"
+                              ? (ctx.firedRuleIds?.join(", ") ?? "conflict")
+                              : (ctx.activeGrantCount ?? 0) === 0 || selected.verdict === "escalate"
+                                ? "—"
+                                : "no conflict"}
+                          </span>
+                        </div>
+                        <div className={`${styles.traceResult} ${verdictClass(selected.verdict)}`}>
+                          → {selected.verdict.toUpperCase()}
+                        </div>
+                      </div>
 
                       {(ctx.firedRuleIds?.length ?? 0) > 0 && (
                         <>

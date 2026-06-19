@@ -10,12 +10,30 @@ interface Ctx {
   agent?: string | null;
 }
 
-export function ActivityView({ decisions }: { decisions: DecisionRow[] }) {
+export function ActivityView({
+  decisions,
+  onRun,
+  running,
+}: {
+  decisions: DecisionRow[];
+  onRun: () => void;
+  running: boolean;
+}) {
   return (
     <div className={styles.activityView}>
-      <div className={styles.viewHead}>
-        <h2 className={styles.viewTitle}>Activity Stream</h2>
-        <p className={styles.viewSub}>Every agentic action evaluated by Warden across the agent fleet, newest first.</p>
+      <div
+        className={styles.viewHead}
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}
+      >
+        <div>
+          <h2 className={styles.viewTitle}>Activity Stream</h2>
+          <p className={styles.viewSub}>
+            Every agentic action evaluated by Warden across the agent fleet, newest first.
+          </p>
+        </div>
+        <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={onRun} disabled={running}>
+          {running ? "Running fleet…" : "Run fleet"}
+        </button>
       </div>
 
       <div className={styles.logStream}>

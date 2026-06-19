@@ -3,48 +3,43 @@
 import type { DecisionRow } from "@/lib/pdp";
 import styles from "./console.module.css";
 
-interface Ctx {
-  tower?: string;
-}
-
-const FLOWS: Array<{ tower: string; steps: Array<{ action: string; label: string }> }> = [
+const FLOWS: Array<{ name: string; steps: Array<{ action: string; label: string }> }> = [
   {
-    tower: "Procure-to-Pay",
+    name: "Trade Lifecycle",
     steps: [
-      { action: "create_vendor", label: "Create vendor" },
-      { action: "approve_vendor_invoice", label: "Approve invoice" },
-      { action: "approve_payment", label: "Release payment" },
+      { action: "capture_trade", label: "Deal capture" },
+      { action: "approve_confirmation", label: "Confirmation" },
+      { action: "approve_settlement", label: "Settlement" },
+      { action: "approve_invoice", label: "Invoicing" },
     ],
   },
   {
-    tower: "Order-to-Cash",
+    name: "Physical / Cargo",
     steps: [
-      { action: "approve_discount", label: "Approve discount" },
-      { action: "approve_credit_override", label: "Credit override" },
+      { action: "nominate_cargo", label: "Nomination" },
+      { action: "actualize_cargo", label: "Actualization" },
     ],
   },
   {
-    tower: "Master Data",
+    name: "Counterparty & Credit",
     steps: [
-      { action: "update_master_data", label: "Update master data" },
-      { action: "change_vendor_bank", label: "Change bank details" },
-    ],
-  },
-  {
-    tower: "Travel & Expense",
-    steps: [
-      { action: "submit_expense", label: "Submit expense" },
-      { action: "approve_expense", label: "Approve expense" },
+      { action: "approve_counterparty", label: "Onboard counterparty" },
+      { action: "override_credit_limit", label: "Credit override" },
     ],
   },
 ];
 
+const SEVERITY: Record<string, number> = { deny: 3, escalate: 2, allow: 1 };
+
 export function ProcessFlowsView({ decisions }: { decisions: DecisionRow[] }) {
-  const latestVerdict = (tower: string, action: string): string | null => {
-    const d = decisions.find(
-      (x) => x.actionType === action && ((x.evaluatedContext ?? {}) as Ctx).tower === tower,
-    );
-    return d?.verdict ?? null;
+  // Show the most consequential verdict Warden has returned for each step.
+  const stepVerdict = (action: string): string | null => {
+    let best: string | null = null;
+    for (const d of decisions) {
+      if (d.actionType !== action) continue;
+      if (best === null || (SEVERITY[d.verdict] ?? 0) > (SEVERITY[best] ?? 0)) best = d.verdict;
+    }
+    return best;
   };
 
   return (
@@ -52,16 +47,16 @@ export function ProcessFlowsView({ decisions }: { decisions: DecisionRow[] }) {
       <div className={styles.viewHead}>
         <h2 className={styles.viewTitle}>Process Flows</h2>
         <p className={styles.viewSub}>
-          Every agentic step in each business process passes the Warden gate before it executes.
+          Every agentic step in the trade lifecycle passes the Warden gate before it executes.
         </p>
       </div>
 
       {FLOWS.map((f) => (
-        <div key={f.tower} className={styles.flow}>
-          <div className={styles.flowTower}>{f.tower}</div>
+        <div key={f.name} className={styles.flow}>
+          <div className={styles.flowTower}>{f.name}</div>
           <div className={styles.flowSteps}>
             {f.steps.map((s, i) => {
-              const v = latestVerdict(f.tower, s.action);
+              const v = stepVerdict(s.action);
               return (
                 <div key={s.action} className={styles.flowStepWrap}>
                   <div className={styles.flowStep}>

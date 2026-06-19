@@ -19,13 +19,15 @@ import type { DecisionInput, EvaluationResult, Verdict } from "./types";
 function towerFromPath(path: string): string {
   const seg = path.split("/").filter(Boolean).pop() ?? "";
   const map: Record<string, string> = {
-    p2p: "Procure-to-Pay",
-    o2c: "Order-to-Cash",
-    mdm: "Master Data",
-    te: "Travel & Expense",
-    rtr: "Record-to-Report",
-    kyc: "KYC",
-    finance: "Finance",
+    crude: "Crude Desk",
+    products: "Products Desk",
+    gas: "Gas Desk",
+    risk: "Risk / Middle Office",
+    scheduling: "Scheduling",
+    ops: "Operations",
+    backoffice: "Back Office",
+    trading: "Front Office",
+    global: "Global",
   };
   return map[seg] ?? seg.toUpperCase();
 }
