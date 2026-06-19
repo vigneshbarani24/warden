@@ -24,6 +24,7 @@ export const api = {
   verify: () => fetch("/api/ledger/verify").then((r) => unwrap<VerifyResult>(r)),
   grants: (principal: string) =>
     fetch(`/api/grants?principal=${encodeURIComponent(principal)}`).then((r) => unwrap<GrantView[]>(r)),
+  allGrants: () => fetch("/api/grants").then((r) => unwrap<GrantView[]>(r)),
   decide: (input: DecisionInput) => post("/api/pdp/decide", input).then((r) => unwrap<DecideOutput>(r)),
   revoke: (id: string) =>
     post(`/api/grants/${id}/revoke`).then((r) => unwrap<{ id: string; revokedAt: string }>(r)),

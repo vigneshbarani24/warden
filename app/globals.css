@@ -1,31 +1,62 @@
-/* Warden design tokens — "vellum, ink, and wax seal," cooled and modern.
-   Semantic verdict colors are load-bearing, never decorative. */
+/* Warden — dark tactical command console.
+   Near-black base, ember brand accent, glowing semantic verdict states. */
 :root {
-  --paper: #eef1f0; /* cool bone base */
-  --ink: #14171a; /* near-black, cool cast */
-  --seal: #6e1d24; /* oxblood — primary actions, chain seals, authority accent */
-  --panel: #e3e7e6; /* inked surface behind monospace data */
-  --line: #c9cfcd; /* hairline rules */
-  --allow: #1f7a4d;
-  --deny: #b0271f;
-  --escalate: #b5790a;
+  --bg: #0a0b0d;
+  --bg-elev: #101216;
+  --bg-elev-2: #15181e;
+  --line: #23282f;
+  --line-soft: #181c22;
+
+  --text: #e7eaed;
+  --text-dim: #8b939d;
+  --text-faint: #565e68;
+
+  --ember: #f26a1f;
+  --ember-bright: #ff8a3d;
+
+  --allow: #35d399;
+  --deny: #fb5b4f;
+  --escalate: #f5a524;
+
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, "SF Mono", monospace;
 }
 
 * {
   box-sizing: border-box;
 }
-
 html,
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  padding: 0;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-code,
-.mono {
-  font-family: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+::selection {
+  background: rgba(242, 106, 31, 0.28);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #262b33;
+  border-radius: 6px;
+  border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #323843;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {

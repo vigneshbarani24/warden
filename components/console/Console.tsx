@@ -22,6 +22,7 @@ const verdictClass = (v: string): string => styles[v] ?? "";
 export function Console() {
   const [decisions, setDecisions] = useState<DecisionRow[]>([]);
   const [ledger, setLedger] = useState<LedgerView[]>([]);
+  const [allGrants, setAllGrants] = useState<GrantView[]>([]);
   const [grants, setGrants] = useState<GrantView[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
@@ -29,9 +30,10 @@ export function Console() {
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
-    const [d, l] = await Promise.all([api.decisions(), api.ledger()]);
+    const [d, l, g] = await Promise.all([api.decisions(), api.ledger(), api.allGrants()]);
     setDecisions(d);
     setLedger(l);
+    setAllGrants(g);
     setSelectedId((cur) => cur ?? d[0]?.requestId ?? null);
   }, []);
 
@@ -54,16 +56,21 @@ export function Console() {
 
   const ctx = (selected?.evaluatedContext ?? {}) as DecisionCtx;
   const orderedLedger = useMemo(() => [...ledger].sort((a, b) => a.seq - b.seq), [ledger]);
+  const activeGrants = allGrants.filter((g) => g.active).length;
+
+  const chain = verifyResult
+    ? verifyResult.ok
+      ? { word: "INTACT", cls: styles.allow, dot: "var(--allow)" }
+      : { word: "BREACH", cls: styles.deny, dot: "var(--deny)" }
+    : { word: "UNVERIFIED", cls: "", dot: "var(--text-faint)" };
 
   const handleVerify = useCallback(async () => {
     setVerifying(true);
     setVerifyResult(null);
     try {
-      const result = await api.verify();
-      setVerifyResult(result);
+      setVerifyResult(await api.verify());
     } finally {
-      const settle = orderedLedger.length * 70 + 420;
-      setTimeout(() => setVerifying(false), settle);
+      setTimeout(() => setVerifying(false), orderedLedger.length * 70 + 460);
     }
   }, [orderedLedger.length]);
 
@@ -72,7 +79,12 @@ export function Console() {
       setBusy(true);
       try {
         await api.revoke(id);
-        if (selected) setGrants(await api.grants(selected.actor));
+        const [g, all] = await Promise.all([
+          selected ? api.grants(selected.actor) : Promise.resolve([]),
+          api.allGrants(),
+        ]);
+        setGrants(g);
+        setAllGrants(all);
       } finally {
         setBusy(false);
       }
@@ -131,22 +143,50 @@ export function Console() {
 
   return (
     <div className={styles.shell}>
-      <header className={styles.masthead}>
+      <header className={styles.topbar}>
         <div className={styles.brand}>
-          <span className={styles.sealDot} />
+          <span className={styles.brandSeal} />
           <span className={styles.wordmark}>WARDEN</span>
-          <span className={styles.tagline}>forensic governance console</span>
+          <span className={styles.divider} />
+          <span className={styles.subtitle}>Decision Command</span>
+          <span className={styles.classified}>CLASSIFIED</span>
         </div>
-        <div className={styles.cluster}>
-          <span className={styles.live} />
-          aurora dsql · us-east-1 · strongly consistent
+        <div className={styles.clusterStatus}>
+          <span className={styles.liveDot} />
+          Aurora DSQL · us-east-1 · strongly consistent
         </div>
       </header>
+
+      <div className={styles.stats}>
+        <div className={styles.stat}>
+          <span className={styles.statLabel}>Active Grants</span>
+          <span className={styles.statValue}>{activeGrants}</span>
+          <span className={styles.statSub}>authority in force</span>
+        </div>
+        <div className={styles.stat}>
+          <span className={styles.statLabel}>Decisions</span>
+          <span className={styles.statValue}>{decisions.length}</span>
+          <span className={styles.statSub}>this session</span>
+        </div>
+        <div className={styles.stat}>
+          <span className={styles.statLabel}>Sealed Blocks</span>
+          <span className={styles.statValue}>{ledger.length}</span>
+          <span className={styles.statSub}>hash-chained</span>
+        </div>
+        <div className={styles.stat}>
+          <span className={styles.statLabel}>Chain</span>
+          <span className={`${styles.statValue} ${chain.cls}`}>{chain.word}</span>
+          <span className={styles.statSub}>tamper-evident</span>
+        </div>
+      </div>
 
       <div className={styles.panes}>
         {/* REQUEST FEED */}
         <section className={`${styles.pane} ${styles.feed}`}>
-          <div className={styles.paneHead}>Request feed</div>
+          <div className={styles.paneHead}>
+            <span>Request Feed</span>
+            <span className={styles.count}>{decisions.length}</span>
+          </div>
           {decisions.length === 0 ? (
             <div className={styles.empty}>No actions awaiting a decision.</div>
           ) : (
@@ -161,17 +201,13 @@ export function Console() {
               >
                 <span className={styles.tick} />
                 <div className={styles.rowMain}>
-                  <span className={styles.rowAction} style={{ color: "var(--ink)" }}>
-                    {d.actionType}
-                  </span>
-                  <span className={styles.rowMeta}>
+                  <div className={styles.rowAction}>{d.actionType}</div>
+                  <div className={styles.rowMeta}>
                     {d.actor} · {d.resource}
-                  </span>
+                  </div>
                 </div>
                 <div className={styles.rowRight}>
-                  <span className={styles.amount} style={{ color: "var(--ink)" }}>
-                    {money.format(d.amount)}
-                  </span>
+                  <span className={styles.amount}>{money.format(d.amount)}</span>
                   <span className={styles.badge}>{d.verdict}</span>
                 </div>
               </div>
@@ -182,9 +218,9 @@ export function Console() {
         {/* DECISION INSPECTOR */}
         <section className={styles.pane}>
           {!selected ? (
-            <div className={styles.placeholder}>Select a decision to inspect.</div>
+            <div className={styles.placeholder}>Select a decision to inspect</div>
           ) : (
-            <div className={`${styles.inspectorInner} ${styles.flip}`} key={selected.requestId}>
+            <div className={styles.inspectorInner} key={selected.requestId}>
               <div className={`${styles.stamp} ${verdictClass(selected.verdict)}`}>
                 <span className={styles.stampVerdict}>{selected.verdict}</span>
                 <span className={styles.stampSub}>
@@ -257,8 +293,8 @@ export function Console() {
                         </span>
                       </div>
                       {g.active ? (
-                        <button className={styles.btn} onClick={() => handleRevoke(g.id)} disabled={busy}>
-                          Revoke grant
+                        <button className={`${styles.btn} ${styles.btnDanger}`} onClick={() => handleRevoke(g.id)} disabled={busy}>
+                          Revoke
                         </button>
                       ) : (
                         <span className={`${styles.grantStatus} ${styles.deny}`}>revoked</span>
@@ -274,27 +310,16 @@ export function Console() {
         {/* LEDGER CHAIN */}
         <section className={`${styles.pane} ${styles.chain}`}>
           <div className={styles.verifyBar}>
-            <div className={styles.paneHead} style={{ position: "static", padding: 0, border: "none", background: "none" }}>
-              Ledger chain
-            </div>
+            <div className={styles.verifyHead}>Ledger Chain</div>
             <div className={styles.verifyStatus}>
-              <span
-                className={styles.sealDot}
-                style={{
-                  background: verifyResult
-                    ? verifyResult.ok
-                      ? "var(--allow)"
-                      : "var(--deny)"
-                    : "var(--line)",
-                }}
-              />
+              <span className={styles.statusDot} style={{ background: chain.dot, boxShadow: `0 0 9px ${chain.dot}` }} />
               {verifyResult
                 ? verifyResult.ok
                   ? `Chain intact through ${orderedLedger.length} seals`
                   : `Break detected at seq ${verifyResult.breakAtSeq}`
                 : "Not yet verified"}
             </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div className={styles.verifyButtons}>
               <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleVerify} disabled={busy || verifying}>
                 Verify
               </button>
