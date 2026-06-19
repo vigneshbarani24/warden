@@ -1,25 +1,82 @@
-/* Warden — dark tactical command console.
-   Near-black base, ember brand accent, glowing semantic verdict states. */
+@import "tailwindcss";
+
 :root {
+  /* ===== Dark tactical command console ===== */
   --bg: #0a0b0d;
   --bg-elev: #101216;
   --bg-elev-2: #15181e;
   --line: #23282f;
   --line-soft: #181c22;
-
   --text: #e7eaed;
   --text-dim: #8b939d;
   --text-faint: #565e68;
-
   --ember: #f26a1f;
   --ember-bright: #ff8a3d;
-
   --allow: #35d399;
   --deny: #fb5b4f;
   --escalate: #f5a524;
 
-  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, "SF Mono", monospace;
+  /* Mono is used raw by the console CSS modules; keep it a real variable. */
+  --font-mono: var(--font-jetbrains), ui-monospace, "SF Mono", monospace;
+
+  /* ===== Light institutional landing (Optimus token names, Warden values) ===== */
+  --background: #eef1f0; /* bone */
+  --foreground: #14171a; /* ink */
+  --card: #e7ebe9;
+  --card-foreground: #14171a;
+  --popover: #f3f5f4;
+  --popover-foreground: #14171a;
+  --primary: #6e1d24; /* oxblood seal */
+  --primary-foreground: #f6efe9;
+  --secondary: #e2e7e4;
+  --secondary-foreground: #14171a;
+  --muted: #e2e7e4;
+  --muted-foreground: #565d63;
+  --accent: #e6eae8;
+  --accent-foreground: #14171a;
+  --destructive: #b0271f; /* deny */
+  --destructive-foreground: #ffffff;
+  --border: #d3d8d4; /* line */
+  --input: #d3d8d4;
+  --ring: #6e1d24;
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  --font-sans: var(--font-instrument), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-seal: #6e1d24;
+  --color-sealbright: #8b2630;
+  --color-allow: #1f7a4d;
+  --color-deny: #b0271f;
+  --color-escalate: #b5790a;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 * {
@@ -30,17 +87,30 @@ body {
   margin: 0;
   padding: 0;
 }
+/* Console default (dark). Unlayered so it beats Tailwind's layered preflight. */
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-sans);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+/* The marketing landing is light; override the dark base when mounted. */
+html:has(.landingRoot),
+html:has(.landingRoot) body {
+  background: var(--background);
+}
+html:has(.landingRoot) {
+  scroll-behavior: smooth;
 }
 
 ::selection {
   background: rgba(242, 106, 31, 0.28);
   color: #fff;
+}
+.landingRoot ::selection {
+  background: rgba(110, 29, 36, 0.18);
+  color: var(--foreground);
 }
 
 ::-webkit-scrollbar {
@@ -52,11 +122,94 @@ body {
   border-radius: 6px;
   border: 2px solid var(--bg);
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #323843;
+html:has(.landingRoot) ::-webkit-scrollbar-thumb {
+  background: #c4cac6;
+  border-color: var(--background);
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+/* ===== Landing animation utilities (ported from Optimus) ===== */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .text-stroke {
+    -webkit-text-stroke: 1.5px currentColor;
+    -webkit-text-fill-color: transparent;
+  }
+  .marquee {
+    animation: marquee 36s linear infinite;
+  }
+  .marquee-reverse {
+    animation: marquee-reverse 30s linear infinite;
+  }
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  @keyframes marquee-reverse {
+    0% {
+      transform: translateX(-50%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+  .line-reveal {
+    clip-path: inset(0 100% 0 0);
+    animation: line-reveal 0.8s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+  }
+  @keyframes line-reveal {
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+  .hover-lift {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+  }
+  .letter-spin {
+    display: inline-block;
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .letter-spin:hover {
+    transform: rotateY(360deg);
+  }
+  .animate-char-in {
+    animation: char-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    opacity: 0;
+    filter: blur(40px);
+    transform: translateY(100%);
+  }
+  @keyframes char-in {
+    0% {
+      opacity: 0;
+      filter: blur(40px);
+      transform: translateY(100%);
+    }
+    100% {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0);
+    }
+  }
+  .noise-overlay {
+    position: relative;
+  }
+  .noise-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.025;
+    pointer-events: none;
+    z-index: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
