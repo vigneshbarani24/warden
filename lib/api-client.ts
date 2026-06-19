@@ -30,4 +30,5 @@ export const api = {
     post(`/api/grants/${id}/revoke`).then((r) => unwrap<{ id: string; revokedAt: string }>(r)),
   tamper: () => post("/api/demo/tamper").then((r) => unwrap<{ seq: number }>(r)),
   reset: () => post("/api/demo/reset").then((r) => unwrap<{ ok: boolean }>(r)),
+  runFleet: (count = 12) => post(`/api/demo/run-agents?count=${count}`).then((r) => unwrap<{ count: number }>(r)),
 };
