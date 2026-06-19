@@ -38,6 +38,8 @@ export interface Grant {
 /** Segregation-of-duties rule: a set of action types that conflict on the same resource. */
 export interface SodDefinition {
   type: "sod";
+  /** Human-readable rule code surfaced in decisions (e.g. "SOD-P2P-07"). */
+  code?: string;
   conflicting: string[];
 }
 

@@ -15,6 +15,21 @@ import { GENESIS, linkHash, verifyChain, type LedgerRow, type VerifyResult } fro
 import { buildLedgerPayload } from "./payload";
 import type { DecisionInput, EvaluationResult, Verdict } from "./types";
 
+/** Map a resource org path to its business tower label, for the views. */
+function towerFromPath(path: string): string {
+  const seg = path.split("/").filter(Boolean).pop() ?? "";
+  const map: Record<string, string> = {
+    p2p: "Procure-to-Pay",
+    o2c: "Order-to-Cash",
+    mdm: "Master Data",
+    te: "Travel & Expense",
+    rtr: "Record-to-Report",
+    kyc: "KYC",
+    finance: "Finance",
+  };
+  return map[seg] ?? seg.toUpperCase();
+}
+
 export interface DecideOutput extends EvaluationResult {
   requestId: string;
   /** True when this requestId was already decided and the stored verdict was replayed. */
@@ -56,7 +71,13 @@ export async function decide(input: DecisionInput): Promise<DecideOutput> {
         String(input.amount),
         result.verdict,
         result.reason,
-        JSON.stringify({ ...result.evaluatedContext, firedRuleIds: result.firedRuleIds, orgPath: input.orgPath }),
+        JSON.stringify({
+          ...result.evaluatedContext,
+          firedRuleIds: result.firedRuleIds,
+          orgPath: input.orgPath,
+          tower: towerFromPath(input.orgPath),
+          agent: typeof input.context?.agent === "string" ? input.context.agent : null,
+        }),
       ],
     );
 

@@ -13,6 +13,8 @@ interface DecisionCtx {
   sodResult?: string;
   firedRuleIds?: string[];
   orgPath?: string;
+  tower?: string;
+  agent?: string | null;
 }
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -190,28 +192,35 @@ export function Console() {
           {decisions.length === 0 ? (
             <div className={styles.empty}>No actions awaiting a decision.</div>
           ) : (
-            decisions.map((d) => (
-              <div
-                key={d.requestId}
-                className={`${styles.row} ${d.requestId === selectedId ? styles.rowSelected : ""} ${verdictClass(d.verdict)}`}
-                onClick={() => setSelectedId(d.requestId)}
-                onKeyDown={(e) => e.key === "Enter" && setSelectedId(d.requestId)}
-                tabIndex={0}
-                role="button"
-              >
-                <span className={styles.tick} />
-                <div className={styles.rowMain}>
-                  <div className={styles.rowAction}>{d.actionType}</div>
-                  <div className={styles.rowMeta}>
-                    {d.actor} · {d.resource}
+            decisions.map((d) => {
+              const rc = (d.evaluatedContext ?? {}) as DecisionCtx;
+              return (
+                <div
+                  key={d.requestId}
+                  className={`${styles.row} ${d.requestId === selectedId ? styles.rowSelected : ""} ${verdictClass(d.verdict)}`}
+                  onClick={() => setSelectedId(d.requestId)}
+                  onKeyDown={(e) => e.key === "Enter" && setSelectedId(d.requestId)}
+                  tabIndex={0}
+                  role="button"
+                >
+                  <span className={styles.tick} />
+                  <div className={styles.rowMain}>
+                    <div className={styles.rowAction}>{d.actionType}</div>
+                    <div className={styles.rowMeta}>
+                      {d.actor} · {d.resource}
+                    </div>
+                    <div className={styles.rowTags}>
+                      {rc.tower && <span className={styles.tag}>{rc.tower}</span>}
+                      {rc.agent && <span className={styles.tagAgent}>{rc.agent}</span>}
+                    </div>
+                  </div>
+                  <div className={styles.rowRight}>
+                    <span className={styles.amount}>{money.format(d.amount)}</span>
+                    <span className={styles.badge}>{d.verdict}</span>
                   </div>
                 </div>
-                <div className={styles.rowRight}>
-                  <span className={styles.amount}>{money.format(d.amount)}</span>
-                  <span className={styles.badge}>{d.verdict}</span>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </section>
 
@@ -233,6 +242,10 @@ export function Console() {
                 <span className={styles.kvalue}>{selected.actor}</span>
                 <span className={styles.klabel}>Action</span>
                 <span className={styles.kvalue}>{selected.actionType}</span>
+                <span className={styles.klabel}>Tower</span>
+                <span className={styles.kvalue}>{ctx.tower ?? "—"}</span>
+                <span className={styles.klabel}>Executed by</span>
+                <span className={styles.kvalue}>{ctx.agent ?? "—"}</span>
                 <span className={styles.klabel}>Resource</span>
                 <span className={styles.kvalue}>{selected.resource}</span>
                 <span className={styles.klabel}>Amount</span>

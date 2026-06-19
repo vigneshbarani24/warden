@@ -88,7 +88,7 @@ export async function evaluate(
       return {
         verdict: "deny",
         reason: `Segregation of duties: ${input.actor} already performed ${conflictWith} on ${input.resource}; cannot also ${input.actionType}.`,
-        firedRuleIds: [rule.id],
+        firedRuleIds: [def.code ?? rule.id],
         evaluatedContext: {
           activeGrantCount: covering.length,
           coveringGrantId: grant.id,
