@@ -2,6 +2,9 @@
  * Aurora DSQL connection for Vercel Fluid Compute and local dev/scripts.
  *
  * - On Vercel (AWS_ROLE_ARN set): credentials come from OIDC federation, no stored keys.
+ * - On Vercel (DSQL_AWS_* set): explicit static keys. NOTE: the function runtime is
+ *   AWS Lambda, which RESERVES AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY/AWS_REGION — values
+ *   set under those names never reach the code. Use the non-reserved DSQL_* names instead.
  * - Locally (scripts): credentials come from the default AWS provider chain
  *   (~/.aws/credentials or AWS_* env vars).
  *
@@ -15,14 +18,21 @@ let pool: Pool | null = null;
 
 async function makeSigner(): Promise<DsqlSigner> {
   const hostname = requireEnv("DSQL_ENDPOINT");
-  const region = requireEnv("AWS_REGION");
+  // DSQL_REGION first: AWS_REGION is Lambda-reserved and pinned to the function's region.
+  const region = process.env.DSQL_REGION ?? requireEnv("AWS_REGION");
   const roleArn = process.env.AWS_ROLE_ARN;
   if (roleArn) {
     // Vercel: federate via OIDC; no long-lived keys.
     const { awsCredentialsProvider } = await import("@vercel/oidc-aws-credentials-provider");
     return new DsqlSigner({ hostname, region, credentials: awsCredentialsProvider({ roleArn }) });
   }
-  // Local: default AWS provider chain.
+  // Vercel with static keys: explicit, via non-reserved names (AWS_* can't be passed on Lambda).
+  const accessKeyId = process.env.DSQL_AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.DSQL_AWS_SECRET_ACCESS_KEY;
+  if (accessKeyId && secretAccessKey) {
+    return new DsqlSigner({ hostname, region, credentials: { accessKeyId, secretAccessKey } });
+  }
+  // Local: default AWS provider chain (~/.aws/credentials or AWS_* env).
   return new DsqlSigner({ hostname, region });
 }
 

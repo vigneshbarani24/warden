@@ -13,3 +13,5 @@ coverage/
 /console-*.png
 /tmpl-*.png
 /v3-*.png
+
+.vercel
