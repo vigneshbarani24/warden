@@ -8,12 +8,14 @@ import styles from "./console.module.css";
 import { ArchitectureView } from "./ArchitectureView";
 import { ProcessFlowsView } from "./ProcessFlowsView";
 import { ActivityView } from "./ActivityView";
+import { TimelineView } from "./TimelineView";
 
-type ViewKey = "operations" | "flows" | "architecture" | "activity";
+type ViewKey = "operations" | "flows" | "timeline" | "architecture" | "activity";
 
 const NAV: Array<{ key: ViewKey; label: string }> = [
   { key: "operations", label: "Operations" },
   { key: "flows", label: "Process Flows" },
+  { key: "timeline", label: "Timeline" },
   { key: "architecture", label: "Architecture" },
   { key: "activity", label: "Activity" },
 ];
@@ -205,6 +207,7 @@ export function Console() {
         <main className={styles.main}>
           {view === "architecture" && <ArchitectureView />}
           {view === "flows" && <ProcessFlowsView decisions={decisions} />}
+          {view === "timeline" && <TimelineView decisions={decisions} grants={allGrants} />}
           {view === "activity" && <ActivityView decisions={decisions} onRun={handleRunFleet} running={busy} />}
 
           {view === "operations" && (
