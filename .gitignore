@@ -9,3 +9,7 @@ dist/
 *.tsbuildinfo
 coverage/
 .DS_Store
+.playwright-mcp/
+/console-initial.png
+/console-verified.png
+/console-tampered.png

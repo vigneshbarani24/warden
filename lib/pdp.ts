@@ -56,7 +56,7 @@ export async function decide(input: DecisionInput): Promise<DecideOutput> {
         String(input.amount),
         result.verdict,
         result.reason,
-        JSON.stringify({ ...result.evaluatedContext, firedRuleIds: result.firedRuleIds }),
+        JSON.stringify({ ...result.evaluatedContext, firedRuleIds: result.firedRuleIds, orgPath: input.orgPath }),
       ],
     );
 
@@ -202,4 +202,31 @@ export async function getGrants(principalId?: string): Promise<GrantView[]> {
       active: !revokedAt && validFrom.getTime() <= now && validTo.getTime() > now,
     };
   });
+}
+
+/**
+ * DEMO ONLY: corrupt the latest ledger row so verifyChain detects the break.
+ * In production the app role lacks UPDATE on the ledger; this uses the admin role
+ * to simulate a privileged tamper, exactly as the demo narrates.
+ */
+export async function tamperLatestLedger(): Promise<{ seq: number }> {
+  const pool = await getPool();
+  const { rows } = await pool.query("SELECT seq, payload FROM ledger ORDER BY seq DESC LIMIT 1");
+  const tip = rows[0];
+  if (!tip) throw new Error("ledger is empty");
+  await pool.query("UPDATE ledger SET payload = $1 WHERE seq = $2", [
+    JSON.stringify({ ...tip.payload, amount: "1" }),
+    tip.seq,
+  ]);
+  return { seq: Number(tip.seq) };
+}
+
+/** DEMO ONLY: clear decisions + ledger and reactivate every grant, for repeatable runs. */
+export async function resetDemo(): Promise<{ ok: boolean }> {
+  await withRetry(async (c) => {
+    await c.query("DELETE FROM ledger");
+    await c.query("DELETE FROM decisions");
+    await c.query("UPDATE authority_grants SET revoked_at = NULL");
+  });
+  return { ok: true };
 }
