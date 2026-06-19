@@ -19,7 +19,7 @@ let pool: Pool | null = null;
 async function makeSigner(): Promise<DsqlSigner> {
   const hostname = requireEnv("DSQL_ENDPOINT");
   // DSQL_REGION first: AWS_REGION is Lambda-reserved and pinned to the function's region.
-  const region = process.env.DSQL_REGION ?? requireEnv("AWS_REGION");
+  const region = process.env.DSQL_REGION?.trim() ?? requireEnv("AWS_REGION");
   const roleArn = process.env.AWS_ROLE_ARN;
   if (roleArn) {
     // Vercel: federate via OIDC; no long-lived keys.
@@ -27,8 +27,8 @@ async function makeSigner(): Promise<DsqlSigner> {
     return new DsqlSigner({ hostname, region, credentials: awsCredentialsProvider({ roleArn }) });
   }
   // Vercel with static keys: explicit, via non-reserved names (AWS_* can't be passed on Lambda).
-  const accessKeyId = process.env.DSQL_AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.DSQL_AWS_SECRET_ACCESS_KEY;
+  const accessKeyId = process.env.DSQL_AWS_ACCESS_KEY_ID?.trim();
+  const secretAccessKey = process.env.DSQL_AWS_SECRET_ACCESS_KEY?.trim();
   if (accessKeyId && secretAccessKey) {
     return new DsqlSigner({ hostname, region, credentials: { accessKeyId, secretAccessKey } });
   }
@@ -39,12 +39,14 @@ async function makeSigner(): Promise<DsqlSigner> {
 export async function getPool(): Promise<Pool> {
   if (pool) return pool;
   const signer = await makeSigner();
+  const host = requireEnv("DSQL_ENDPOINT");
   const p = new Pool({
-    host: requireEnv("DSQL_ENDPOINT"),
+    host,
     port: 5432,
     database: "postgres",
     user: "admin",
-    ssl: { rejectUnauthorized: true },
+    // servername pins TLS SNI to the cluster host; DSQL rejects connections with mismatched SNI.
+    ssl: { rejectUnauthorized: true, servername: host },
     // node-postgres calls this per new connection -> always a fresh, valid token.
     password: async () => signer.getDbConnectAdminAuthToken(),
     // Recycle before DSQL's 60-minute hard connection cap.
@@ -98,7 +100,8 @@ export async function withRetry<T>(
 }
 
 function requireEnv(name: string): string {
-  const v = process.env[name];
+  // Trim: values piped into the platform env can carry a trailing newline that breaks TLS SNI.
+  const v = process.env[name]?.trim();
   if (!v) throw new Error(`Missing required env var: ${name}`);
   return v;
 }
