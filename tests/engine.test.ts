@@ -17,16 +17,22 @@ function grant(partial: Partial<Grant> & Pick<Grant, "orgPath" | "approvalLimit"
   };
 }
 
-function makeStore(opts: {
-  grants?: Grant[];
-  rules?: PolicyRule[];
-  priors?: PriorAction[];
-}): WardenStore {
+function makeStore(
+  opts: {
+    grants?: Grant[];
+    rules?: PolicyRule[];
+    priors?: PriorAction[];
+  },
+  lockedIds?: string[],
+): WardenStore {
   return {
     activeGrants: async (principalId, actionType) =>
       (opts.grants ?? []).filter(
         (g) => g.principalId === principalId && g.actionType === actionType && g.revokedAt === null,
       ),
+    lockGrants: async (ids) => {
+      lockedIds?.push(...ids);
+    },
     activeSodRules: async () => opts.rules ?? [],
     priorActions: async () => opts.priors ?? [],
   };
@@ -98,6 +104,16 @@ describe("evaluate", () => {
     expect(r.verdict).toBe("deny");
     expect(r.firedRuleIds).toContain("SOD-07");
     expect(r.evaluatedContext.sodResult).toBe("conflict");
+  });
+
+  it("locks the covering grants so a concurrent revoke forces a retry", async () => {
+    const locked: string[] = [];
+    const store = makeStore(
+      { grants: [grant({ id: "g-cover", orgPath: "/root/finance/", approvalLimit: 1_000_000 })] },
+      locked,
+    );
+    await evaluate(baseInput, store, NOW);
+    expect(locked).toContain("g-cover");
   });
 
   it("treats a revoked grant as absent (deny no authority)", async () => {

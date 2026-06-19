@@ -59,7 +59,9 @@ In one `withRetry` transaction:
 4. Else ⇒ `allow`.
 5. Build `evaluatedContext` (active grant count, limit checked, SoD result). Insert `decisions` row and append `ledger` row in the same txn. Return verdict.
 
-Reason strings are deterministic and name what fired. Snapshot isolation (REPEATABLE READ) + same-txn read/write means a concurrent revoke that commits first triggers a `40001` retry, which re-reads and denies — never a stale allow.
+Reason strings are deterministic and name what fired.
+
+**Concurrency (the load-bearing detail).** DSQL is snapshot isolation (REPEATABLE READ) and plain reads do **not** participate in conflict detection — only write-write conflicts abort. So putting the read and write in one transaction is necessary but **not sufficient**: a concurrent revoke writes a *different* row set and would not force a retry, yielding a stale allow. The fix: re-read the covering grants with `SELECT … FOR UPDATE WHERE id = $1` (DSQL allows `FOR UPDATE` only on PK-equality, single-table) to promote them into the conflict set. A concurrent revoke then aborts the decision at COMMIT (`40001`), and `withRetry` re-evaluates against the revoked state — never a stale allow, even under concurrency. A request that arrives *after* the revoke commits already sees it via DSQL's strong consistency (this is the staged demo's guarantee). Implemented as `WardenStore.lockGrants(ids)` called from `evaluate()`.
 
 ## 5. Ledger hash chain (FR-3)
 

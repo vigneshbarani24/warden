@@ -26,7 +26,7 @@ DSQL is Postgres on the wire but not Postgres in behavior. These are not style p
 - **No foreign keys.** Referential integrity is enforced in the app layer. Do not write `REFERENCES`. Validate parent existence in the same transaction as the child write.
 - **No sequences / `SERIAL` / `IDENTITY`.** Generate IDs client-side. Use UUIDv4 for primary keys, which also spreads write contention across the cluster key range. Never expect an auto-increment.
 - **Optimistic concurrency control.** Conflicts surface at `COMMIT`, not on the statement, as `SQLSTATE 40001`. `OC000` = row write-write conflict, `OC001` = schema catalog stale after DDL. Every write transaction must be wrapped in idempotent retry with backoff. See `withRetry` below. This is mandatory, not defensive.
-- **Snapshot isolation, not serializable.** Equivalent to Postgres `REPEATABLE READ`. Write skew is possible. For the SoD and approval-limit checks, do the read and the decision write in one transaction so a conflicting concurrent change forces a retry rather than a stale allow.
+- **Snapshot isolation, not serializable.** Equivalent to Postgres `REPEATABLE READ`. Write skew is possible, and **plain reads do not participate in OCC conflict detection (write-write only)** — so same-transaction read+write is necessary but **not sufficient** to stop a stale allow. Lock the covering `authority_grants` rows with `SELECT … FOR UPDATE WHERE id = $1` (DSQL: PK-equality, single-table only) inside the decision transaction so a concurrent revoke conflicts at COMMIT (`40001`) and `withRetry` re-evaluates against the revoked state.
 - **`CREATE INDEX ASYNC` only** on populated tables. Plain `CREATE INDEX` only works on empty tables. After creating, poll until the index reports valid before relying on it.
 - **No triggers, no PL/pgSQL, no extensions.** SQL functions only. Move all logic to the app layer or SQL. Don't reach for `uuid-ossp` or `pgcrypto`; hash and UUID in TypeScript.
 - **No `TRUNCATE`.** Use `DELETE FROM`. No `VACUUM`; storage is auto-managed.
@@ -83,7 +83,7 @@ Verification walks the chain, recomputes each hash from the prior, and flags the
 
 PDP input: `{ requestId, actor, actionType, resource, amount, context }`. Evaluate in one transaction:
 
-1. Resolve actor's **active** grants for `actionType` at or above the resource's `org_path`.
+1. Resolve actor's **active** grants for `actionType` at or above the resource's `org_path`, then lock them with `SELECT … FOR UPDATE WHERE id = $1` so a concurrent revoke conflicts at COMMIT (see the snapshot-isolation note).
 2. No active grant → `deny` (no authority).
 3. `amount > approval_limit` → `escalate` to the nearest ancestor grant whose limit covers it.
 4. **SoD check:** does the actor hold a conflicting prior action on this resource per `policy_rules`? e.g. actor created the vendor and is now approving its invoice → `deny`.

@@ -32,6 +32,15 @@ export class DsqlStore implements WardenStore {
     }));
   }
 
+  async lockGrants(ids: string[]): Promise<void> {
+    // DSQL allows FOR UPDATE only with an equality predicate on the primary key and on a
+    // single table, so lock id-by-id. Each locked row joins the conflict set: a concurrent
+    // revoke of it aborts this transaction at COMMIT (40001) and withRetry re-evaluates.
+    for (const id of ids) {
+      await this.client.query("SELECT id FROM authority_grants WHERE id = $1 FOR UPDATE", [id]);
+    }
+  }
+
   async activeSodRules(): Promise<PolicyRule[]> {
     const { rows } = await this.client.query(
       `SELECT id, rule_type, definition, active

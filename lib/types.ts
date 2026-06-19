@@ -77,6 +77,14 @@ export interface EvaluationResult {
 export interface WardenStore {
   /** Active grants for a principal + action type, as of `at`. Implementations filter on window + revocation. */
   activeGrants(principalId: string, actionType: string, at: Date): Promise<Grant[]>;
+  /**
+   * Lock specific grant rows (SELECT ... FOR UPDATE) inside the decision transaction.
+   * DSQL is snapshot isolation and plain reads do NOT participate in conflict detection,
+   * so a concurrent revoke would not force a retry. Locking the grants the decision
+   * depends on promotes them into the write/conflict set: a concurrent revoke then
+   * conflicts at COMMIT (40001) and withRetry re-evaluates against the revoked state.
+   */
+  lockGrants(ids: string[]): Promise<void>;
   activeSodRules(): Promise<PolicyRule[]>;
   /** Prior decided actions by this actor on this resource. */
   priorActions(actor: string, resource: string): Promise<PriorAction[]>;

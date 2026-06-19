@@ -53,6 +53,11 @@ export async function evaluate(
     };
   }
 
+  // Promote the covering grants into the transaction's conflict set so a concurrent
+  // revoke (a write to one of these rows) forces an OCC retry rather than a stale allow.
+  // DSQL is snapshot isolation; plain reads alone do not trigger conflict detection.
+  await store.lockGrants(covering.map((g) => g.id));
+
   const sufficient = covering.filter((g) => g.approvalLimit >= input.amount);
 
   if (sufficient.length === 0) {
