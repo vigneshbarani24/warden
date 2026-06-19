@@ -9,13 +9,15 @@ import { ArchitectureView } from "./ArchitectureView";
 import { ProcessFlowsView } from "./ProcessFlowsView";
 import { ActivityView } from "./ActivityView";
 import { TimelineView } from "./TimelineView";
+import { ControlsView } from "./ControlsView";
 
-type ViewKey = "operations" | "flows" | "timeline" | "architecture" | "activity";
+type ViewKey = "operations" | "flows" | "timeline" | "controls" | "architecture" | "activity";
 
 const NAV: Array<{ key: ViewKey; label: string }> = [
   { key: "operations", label: "Operations" },
   { key: "flows", label: "Process Flows" },
   { key: "timeline", label: "Timeline" },
+  { key: "controls", label: "Controls" },
   { key: "architecture", label: "Architecture" },
   { key: "activity", label: "Activity" },
 ];
@@ -208,6 +210,7 @@ export function Console() {
           {view === "architecture" && <ArchitectureView />}
           {view === "flows" && <ProcessFlowsView decisions={decisions} />}
           {view === "timeline" && <TimelineView decisions={decisions} grants={allGrants} />}
+          {view === "controls" && <ControlsView grants={allGrants} />}
           {view === "activity" && <ActivityView decisions={decisions} onRun={handleRunFleet} running={busy} />}
 
           {view === "operations" && (

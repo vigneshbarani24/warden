@@ -227,6 +227,32 @@ export async function getGrants(principalId?: string): Promise<GrantView[]> {
   });
 }
 
+export interface PolicyRuleView {
+  id: string;
+  ruleType: string;
+  code: string;
+  conflicting: string[];
+  active: boolean;
+}
+
+/** The SoD / compliance rules, read straight from the policy_rules table for the Controls view. */
+export async function getPolicyRules(): Promise<PolicyRuleView[]> {
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    "SELECT id, rule_type, definition, active FROM policy_rules ORDER BY active DESC, rule_type",
+  );
+  return rows.map((r) => {
+    const def = (r.definition ?? {}) as { code?: string; conflicting?: string[] };
+    return {
+      id: String(r.id),
+      ruleType: String(r.rule_type),
+      code: typeof def.code === "string" ? def.code : String(r.id).slice(0, 8),
+      conflicting: Array.isArray(def.conflicting) ? def.conflicting.map(String) : [],
+      active: Boolean(r.active),
+    };
+  });
+}
+
 /**
  * DEMO ONLY: corrupt the latest ledger row so verifyChain detects the break.
  * In production the app role lacks UPDATE on the ledger; this uses the admin role

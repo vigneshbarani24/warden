@@ -2,7 +2,7 @@
  * Browser-side typed client for the Warden API. Type-only imports of the server
  * types (erased at build) keep the `pg`/AWS server code out of the client bundle.
  */
-import type { DecisionRow, LedgerView, GrantView, DecideOutput } from "./pdp";
+import type { DecisionRow, LedgerView, GrantView, DecideOutput, PolicyRuleView } from "./pdp";
 import type { VerifyResult } from "./ledger";
 import type { DecisionInput } from "./types";
 
@@ -25,6 +25,7 @@ export const api = {
   grants: (principal: string) =>
     fetch(`/api/grants?principal=${encodeURIComponent(principal)}`).then((r) => unwrap<GrantView[]>(r)),
   allGrants: () => fetch("/api/grants").then((r) => unwrap<GrantView[]>(r)),
+  policies: () => fetch("/api/policies").then((r) => unwrap<PolicyRuleView[]>(r)),
   decide: (input: DecisionInput) => post("/api/pdp/decide", input).then((r) => unwrap<DecideOutput>(r)),
   revoke: (id: string) =>
     post(`/api/grants/${id}/revoke`).then((r) => unwrap<{ id: string; revokedAt: string }>(r)),
