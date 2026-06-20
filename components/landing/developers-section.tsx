@@ -139,7 +139,7 @@ export function DevelopersSection() {
               <span className="w-8 h-px bg-foreground/30" />
               For developers
             </span>
-            <h2 className="text-4xl lg:text-6xl font-display tracking-tight mb-8">
+            <h2 className="text-3xl lg:text-5xl font-display tracking-tight mb-8">
               Drop it into
               <br />
               <span className="text-muted-foreground">any agent.</span>

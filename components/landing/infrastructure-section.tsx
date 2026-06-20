@@ -46,7 +46,7 @@ export function InfrastructureSection() {
               <span className="w-8 h-px bg-foreground/30" />
               Infrastructure
             </span>
-            <h2 className="text-4xl lg:text-6xl font-display tracking-tight mb-8">
+            <h2 className="text-3xl lg:text-5xl font-display tracking-tight mb-8">
               Built on Amazon
               <br />
               Aurora DSQL.

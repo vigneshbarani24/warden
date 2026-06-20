@@ -67,7 +67,7 @@ export function PricingSection() {
           <span className="font-mono text-xs tracking-widest text-muted-foreground uppercase block mb-6">
             Pricing
           </span>
-          <h2 className="font-display text-5xl md:text-6xl lg:text-7xl tracking-tight text-foreground mb-6">
+          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl tracking-tight text-foreground mb-6">
             Priced per decision,
             <br />
             <span className="text-stroke">per agent</span>
