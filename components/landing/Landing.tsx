@@ -2,6 +2,8 @@ import { Navigation } from "./navigation";
 import { HeroSection } from "./hero-section";
 import { FeaturesSection } from "./features-section";
 import { HowItWorksSection } from "./how-it-works-section";
+import { UseCasesSection } from "./use-cases-section";
+import { ArchitectureSection } from "./architecture-section";
 import { InfrastructureSection } from "./infrastructure-section";
 import { MetricsSection } from "./metrics-section";
 import { IntegrationsSection } from "./integrations-section";
@@ -19,6 +21,8 @@ export function Landing() {
       <HeroSection />
       <FeaturesSection />
       <HowItWorksSection />
+      <UseCasesSection />
+      <ArchitectureSection />
       <InfrastructureSection />
       <MetricsSection />
       <IntegrationsSection />
