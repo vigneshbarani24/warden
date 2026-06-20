@@ -210,6 +210,122 @@ html:has(.landingRoot) ::-webkit-scrollbar-thumb {
     pointer-events: none;
     z-index: 1;
   }
+
+  /* ---- Control-plane flow animation ---- */
+  .cp-dot {
+    position: absolute;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    margin-top: -3.5px;
+    border-radius: 9999px;
+    animation: cp-flow 2.6s linear infinite;
+  }
+  @keyframes cp-flow {
+    0% {
+      left: -3%;
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    88% {
+      opacity: 1;
+    }
+    100% {
+      left: 103%;
+      opacity: 0;
+    }
+  }
+  .cp-pulse {
+    animation: cp-pulse 2s ease-in-out infinite;
+  }
+  @keyframes cp-pulse {
+    0%,
+    100% {
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  .cp-sync {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--color-seal) 50%,
+      transparent 100%
+    );
+    background-size: 50% 100%;
+    background-repeat: no-repeat;
+    animation: cp-sync 2.4s linear infinite;
+  }
+  @keyframes cp-sync {
+    from {
+      background-position: -50% 0;
+    }
+    to {
+      background-position: 150% 0;
+    }
+  }
+  .cp-seal {
+    animation: cp-seal 3.2s ease-in-out infinite;
+  }
+  @keyframes cp-seal {
+    0%,
+    100% {
+      opacity: 0.45;
+      transform: scaleY(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scaleY(1.25);
+    }
+  }
+
+  /* ---- Ported section keyframes (bare-referenced, so defined here) ---- */
+  /* Opacity pulse for the DSQL multi-region node dots. */
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+  /* The verdict stamp landing on a process-flow step. */
+  .pf-stamp {
+    animation: pf-stamp 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes pf-stamp {
+    0% {
+      transform: scale(0.55);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.12);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  /* A cleared step sliding down into the ledger spine. */
+  @keyframes pf-seal-in {
+    0% {
+      opacity: 0;
+      transform: translateY(-6px) scaleY(0.7);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scaleY(1);
+    }
+  }
+  .pf-seal-in {
+    animation: pf-seal-in 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
