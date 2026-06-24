@@ -4,61 +4,52 @@ import { useEffect, useRef, useState } from "react";
 
 const steps = [
   {
-    number: "I",
-    title: "Authority",
-    description: "Resolve the actor's active grants up the org hierarchy. No grant covering the action means no authority — Warden denies.",
-    code: `warden.decide({
-  actor: 'settlement-agent',
-  action: 'approve_settlement',
-  resource: 'DEAL-88421'
-})
-
-// resolving grants up the
-// org hierarchy...`,
+    number: "01",
+    title: "Resolve",
+    subtitle: "authority",
+    description:
+      "Find the actor's active grants for this action at or above the resource's org path, up the hierarchy.",
+    code: `// active grant up the desk hierarchy?
+{ actor: "desk.agent", action: "approve_settlement",
+  orgPath: "/global/trading/gas/" }`,
   },
   {
-    number: "II",
-    title: "Limit",
-    description: "Is the amount within the actor's mandate? Over the limit, Warden escalates to the nearest authority that covers it.",
-    code: `// amount: $2,000,000
-// mandate limit: $500,000
-
-// over mandate ->
-// escalate to nearest
-// authority that covers it`,
+    number: "02",
+    title: "Check",
+    subtitle: "the limit",
+    description:
+      "Within mandate it allows; over it, escalate to the nearest authority that covers the amount.",
+    code: `amount: 2_000_000  >  limit: 3_000_000  // within mandate`,
   },
   {
-    number: "III",
-    title: "Segregation of duties",
-    description: "Has the actor done a conflicting action on this resource? You can't settle the deal you captured — Warden denies.",
-    code: `// actor captured DEAL-88421
-// now approving settlement
-
-// front/back-office conflict
-// policy SOD-FBO-01 -> deny`,
+    number: "03",
+    title: "Check",
+    subtitle: "duties (over history)",
+    description:
+      "Does the actor hold a conflicting prior action on this resource? Front office can't settle its own deal.",
+    code: `priorActions(actor, "DEAL-88421")
+// captured + settle  →  SOD-FBO-01  →  deny`,
   },
   {
-    number: "IV",
-    title: "Verdict",
-    description: "Allow, deny, or escalate — with the reason and the exact rules that fired, sealed to the hash-chained ledger.",
-    code: `{
-  verdict: 'DENY',
-  reason: 'authority revoked 31s ago',
-  policies: ['SOD-FBO-01'],
-  sealed: true
-}`,
+    number: "04",
+    title: "Seal",
+    subtitle: "the verdict",
+    description:
+      "Append the verdict + the rules that fired to the hash-chained ledger. Reason returned to the agent.",
+    code: `{ verdict: "deny", reason: "SoD: …",
+  firedRuleIds: ["SOD-FBO-01"] }  // sealed`,
   },
 ];
 
 export function HowItWorksSection() {
   const [activeStep, setActiveStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) setIsVisible(true);
+      ([entry]) => {
+        if (entry?.isIntersecting) setIsVisible(true);
       },
       { threshold: 0.1 }
     );
@@ -70,7 +61,7 @@ export function HowItWorksSection() {
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveStep((prev) => (prev + 1) % steps.length);
-    }, 5000);
+    }, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -78,162 +69,129 @@ export function HowItWorksSection() {
     <section
       id="how-it-works"
       ref={sectionRef}
-      className="relative py-24 lg:py-32 bg-foreground text-background overflow-hidden"
+      className="relative py-24 lg:py-32 bg-background text-foreground overflow-hidden"
     >
-      {/* Diagonal lines pattern */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `repeating-linear-gradient(
-            -45deg,
-            transparent,
-            transparent 40px,
-            currentColor 40px,
-            currentColor 41px
-          )`
-        }} />
-      </div>
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-primary/[0.04] blur-[100px] pointer-events-none" />
 
       <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12">
-        {/* Header */}
-        <div className="mb-16 lg:mb-24">
-          <span className="inline-flex items-center gap-3 text-sm font-mono text-background/50 mb-6">
-            <span className="w-8 h-px bg-background/30" />
-            Process
-          </span>
-          <h2
-            className={`text-3xl lg:text-5xl font-display tracking-tight transition-all duration-700 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        {/* Header — eyebrow + the three-line decision pipeline, fading */}
+        <div className="relative mb-12 lg:mb-16 grid lg:grid-cols-2 gap-4 lg:gap-12 items-end">
+          <div className="overflow-hidden">
+            <div
+              className={`transition-all duration-1000 ${
+                isVisible ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"
+              }`}
+            >
+              <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-8">
+                <span className="w-12 h-px bg-foreground/20" />
+                Process
+              </span>
+            </div>
+
+            <h2
+              className={`text-4xl md:text-5xl lg:text-7xl font-display tracking-tight leading-[0.9] transition-all duration-1000 delay-100 ${
+                isVisible ? "translate-y-0 opacity-100" : "translate-y-16 opacity-0"
+              }`}
+            >
+              <span className="block">Resolve.</span>
+              <span className="block text-foreground/40">Check.</span>
+              <span className="block text-foreground/15">Seal.</span>
+            </h2>
+          </div>
+
+          {/* The decision contract, stated plainly — replaces the decorative tree */}
+          <div
+            className={`relative transition-all duration-1000 delay-200 ${
+              isVisible ? "opacity-100" : "opacity-0"
             }`}
           >
-            A decision point agents call
-            <br />
-            <span className="text-background/50">before they act.</span>
-          </h2>
-        </div>
-
-        {/* Main content */}
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24">
-          {/* Steps */}
-          <div className="space-y-0">
-            {steps.map((step, index) => (
-              <button
-                key={step.number}
-                type="button"
-                onClick={() => setActiveStep(index)}
-                className={`w-full text-left py-8 border-b border-background/10 transition-all duration-500 group ${
-                  activeStep === index ? "opacity-100" : "opacity-40 hover:opacity-70"
-                }`}
-              >
-                <div className="flex items-start gap-6">
-                  <span className="font-display text-3xl text-background/30">{step.number}</span>
-                  <div className="flex-1">
-                    <h3 className="text-2xl lg:text-3xl font-display mb-3 group-hover:translate-x-2 transition-transform duration-300">
-                      {step.title}
-                    </h3>
-                    <p className="text-background/60 leading-relaxed">
-                      {step.description}
-                    </p>
-                    
-                    {/* Progress indicator */}
-                    {activeStep === index && (
-                      <div className="mt-4 h-px bg-background/20 overflow-hidden">
-                        <div 
-                          className="h-full bg-background w-0"
-                          style={{
-                            animation: 'progress 5s linear forwards'
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {/* Code display */}
-          <div className="lg:sticky lg:top-32 self-start">
-            <div className="border border-background/10 overflow-hidden">
-              {/* Window header */}
-              <div className="px-6 py-4 border-b border-background/10 flex items-center justify-between">
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-background/20" />
-                  <div className="w-3 h-3 rounded-full bg-background/20" />
-                  <div className="w-3 h-3 rounded-full bg-background/20" />
-                </div>
-                <span className="text-xs font-mono text-background/40">decide.ts</span>
-              </div>
-
-              {/* Code content */}
-              <div className="p-8 font-mono text-sm min-h-[280px]">
-                <pre className="text-background/70">
-                  {(steps[activeStep]?.code ?? '').split('\n').map((line, lineIndex) => (
-                    <div 
-                      key={`${activeStep}-${lineIndex}`} 
-                      className="leading-loose code-line-reveal"
-                      style={{ 
-                        animationDelay: `${lineIndex * 80}ms`,
-                      }}
-                    >
-                      <span className="text-background/20 select-none w-8 inline-block">{lineIndex + 1}</span>
-                      <span className="inline-flex">
-                        {line.split('').map((char, charIndex) => (
-                          <span
-                            key={`${activeStep}-${lineIndex}-${charIndex}`}
-                            className="code-char-reveal"
-                            style={{
-                              animationDelay: `${lineIndex * 80 + charIndex * 15}ms`,
-                            }}
-                          >
-                            {char === ' ' ? '\u00A0' : char}
-                          </span>
-                        ))}
-                      </span>
-                    </div>
-                  ))}
-                </pre>
-              </div>
-
-              {/* Status */}
-              <div className="px-6 py-4 border-t border-background/10 flex items-center gap-3">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-xs font-mono text-background/40">Ready</span>
-              </div>
+            <div className="border border-foreground/10 bg-card/40 p-7 lg:p-9">
+              <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                The PDP contract
+              </span>
+              <p className="mt-5 text-lg lg:text-xl text-muted-foreground leading-relaxed">
+                An agent posts a proposed action. Warden runs four checks in one transaction and
+                returns{" "}
+                <span className="font-mono text-allow">allow</span> ·{" "}
+                <span className="font-mono text-deny">deny</span> ·{" "}
+                <span className="font-mono text-escalate">escalate</span> — with the reason and the
+                exact rules that fired.
+              </p>
             </div>
           </div>
+        </div>
+
+        {/* Four auto-advancing step cards, each carrying its real decide() slice */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {steps.map((step, index) => (
+            <button
+              key={step.number}
+              type="button"
+              onClick={() => setActiveStep(index)}
+              className={`relative text-left p-7 lg:p-8 border transition-all duration-500 ${
+                activeStep === index
+                  ? "bg-card border-foreground/40"
+                  : "bg-card/40 border-foreground/15 hover:border-foreground/35"
+              }`}
+            >
+              {/* Step number with animated progress line */}
+              <div className="flex items-center gap-4 mb-7">
+                <span
+                  className={`text-3xl lg:text-4xl font-display transition-colors duration-300 ${
+                    activeStep === index ? "text-primary" : "text-foreground/20"
+                  }`}
+                >
+                  {step.number}
+                </span>
+                <div className="flex-1 h-px bg-foreground/10 overflow-hidden">
+                  {activeStep === index && (
+                    <div className="h-full bg-primary/50 animate-progress" />
+                  )}
+                </div>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-2xl lg:text-3xl font-display mb-1 leading-tight">{step.title}</h3>
+              <span className="text-lg text-muted-foreground font-display block mb-5">
+                {step.subtitle}
+              </span>
+
+              {/* Description */}
+              <p
+                className={`text-[15px] text-muted-foreground leading-relaxed transition-opacity duration-300 ${
+                  activeStep === index ? "opacity-100" : "opacity-70"
+                }`}
+              >
+                {step.description}
+              </p>
+
+              {/* The real decide() slice this step runs (code = phrasing content, valid in a button) */}
+              <code className="mt-6 block border-t border-foreground/10 pt-5 font-mono text-[11px] leading-relaxed text-foreground/70 whitespace-pre-wrap [overflow-wrap:anywhere]">
+                {step.code}
+              </code>
+
+              {/* Active indicator */}
+              <div
+                className={`absolute bottom-0 left-0 right-0 h-1 bg-primary transition-transform duration-500 origin-left ${
+                  activeStep === index ? "scale-x-100" : "scale-x-0"
+                }`}
+              />
+            </button>
+          ))}
         </div>
       </div>
 
       <style jsx>{`
         @keyframes progress {
-          from { width: 0%; }
-          to { width: 100%; }
-        }
-        
-        .code-line-reveal {
-          opacity: 0;
-          transform: translateX(-8px);
-          animation: lineReveal 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
-        
-        @keyframes lineReveal {
+          from {
+            width: 0%;
+          }
           to {
-            opacity: 1;
-            transform: translateX(0);
+            width: 100%;
           }
         }
-        
-        .code-char-reveal {
-          opacity: 0;
-          filter: blur(8px);
-          animation: charReveal 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
-        
-        @keyframes charReveal {
-          to {
-            opacity: 1;
-            filter: blur(0);
-          }
+        .animate-progress {
+          animation: progress 6s linear forwards;
         }
       `}</style>
     </section>

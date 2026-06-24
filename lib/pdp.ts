@@ -8,7 +8,7 @@
  * resolves — so the chain stays gap-free and ordered without a sequence object.
  */
 import { randomUUID } from "node:crypto";
-import { getPool, withRetry } from "./db";
+import { readWithRetry, withRetry, type DsqlRegion } from "./db";
 import { evaluate } from "./engine";
 import { DsqlStore } from "./store-dsql";
 import { GENESIS, linkHash, verifyChain, type LedgerRow, type VerifyResult } from "./ledger";
@@ -38,7 +38,7 @@ export interface DecideOutput extends EvaluationResult {
   idempotentReplay: boolean;
 }
 
-export async function decide(input: DecisionInput): Promise<DecideOutput> {
+export async function decide(input: DecisionInput, region: DsqlRegion = "A"): Promise<DecideOutput> {
   return withRetry(async (client) => {
     const existing = await client.query(
       "SELECT verdict, reason, evaluated_context FROM decisions WHERE request_id = $1",
@@ -51,7 +51,9 @@ export async function decide(input: DecisionInput): Promise<DecideOutput> {
         requestId: input.requestId,
         verdict: prior.verdict as Verdict,
         reason: String(prior.reason),
-        firedRuleIds: Array.isArray(ctx.firedRuleIds) ? ctx.firedRuleIds : [],
+        firedRuleIds: Array.isArray(ctx.firedRuleIds)
+          ? ctx.firedRuleIds.filter((x: unknown): x is string => typeof x === "string")
+          : [],
         evaluatedContext: ctx,
         idempotentReplay: true,
       };
@@ -99,10 +101,13 @@ export async function decide(input: DecisionInput): Promise<DecideOutput> {
     );
 
     return { requestId: input.requestId, ...result, idempotentReplay: false };
-  });
+  }, 5, region);
 }
 
-export async function revokeGrant(grantId: string): Promise<{ id: string; revokedAt: string }> {
+export async function revokeGrant(
+  grantId: string,
+  region: DsqlRegion = "A",
+): Promise<{ id: string; revokedAt: string }> {
   return withRetry(async (client) => {
     const updated = await client.query(
       "UPDATE authority_grants SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL RETURNING id, revoked_at",
@@ -115,7 +120,22 @@ export async function revokeGrant(grantId: string): Promise<{ id: string; revoke
     const curRow = current.rows[0];
     if (!curRow) throw new Error(`Grant ${grantId} not found`);
     return { id: String(curRow.id), revokedAt: String(curRow.revoked_at) };
-  });
+  }, 5, region);
+}
+
+/**
+ * DEMO ONLY: re-arm a revoked grant so the cross-region demo re-runs cleanly.
+ * Targets a specific region endpoint (the revoke/re-arm happen on region A; the
+ * deny is read from region B to prove strong-consistency global revocation).
+ */
+export async function reactivateGrant(
+  grantId: string,
+  region: DsqlRegion = "A",
+): Promise<{ id: string }> {
+  return withRetry(async (client) => {
+    await client.query("UPDATE authority_grants SET revoked_at = NULL WHERE id = $1", [grantId]);
+    return { id: grantId };
+  }, 5, region);
 }
 
 export interface DecisionRow {
@@ -131,11 +151,12 @@ export interface DecisionRow {
 }
 
 export async function getRecentDecisions(limit = 50): Promise<DecisionRow[]> {
-  const pool = await getPool();
-  const { rows } = await pool.query(
-    `SELECT request_id, actor, action_type, resource, amount, verdict, reason, evaluated_context, created_at
-       FROM decisions ORDER BY created_at DESC LIMIT $1`,
-    [limit],
+  const { rows } = await readWithRetry((pool) =>
+    pool.query(
+      `SELECT request_id, actor, action_type, resource, amount, verdict, reason, evaluated_context, created_at
+         FROM decisions ORDER BY created_at DESC LIMIT $1`,
+      [limit],
+    ),
   );
   return rows.map((r) => ({
     requestId: String(r.request_id),
@@ -156,11 +177,12 @@ export interface LedgerView extends LedgerRow {
 }
 
 export async function getLedger(limit = 200): Promise<LedgerView[]> {
-  const pool = await getPool();
-  const { rows } = await pool.query(
-    `SELECT seq, request_id, prev_hash, payload, hash, created_at
-       FROM ledger ORDER BY seq ASC LIMIT $1`,
-    [limit],
+  const { rows } = await readWithRetry((pool) =>
+    pool.query(
+      `SELECT seq, request_id, prev_hash, payload, hash, created_at
+         FROM ledger ORDER BY seq ASC LIMIT $1`,
+      [limit],
+    ),
   );
   return rows.map((r) => ({
     seq: Number(r.seq),
@@ -173,8 +195,9 @@ export async function getLedger(limit = 200): Promise<LedgerView[]> {
 }
 
 export async function verifyLedger(): Promise<VerifyResult> {
-  const pool = await getPool();
-  const { rows } = await pool.query("SELECT seq, prev_hash, payload, hash FROM ledger ORDER BY seq ASC");
+  const { rows } = await readWithRetry((pool) =>
+    pool.query("SELECT seq, prev_hash, payload, hash FROM ledger ORDER BY seq ASC"),
+  );
   const ledger: LedgerRow[] = rows.map((r) => ({
     seq: Number(r.seq),
     prevHash: String(r.prev_hash),
@@ -197,17 +220,18 @@ export interface GrantView {
 }
 
 export async function getGrants(principalId?: string): Promise<GrantView[]> {
-  const pool = await getPool();
-  const { rows } = principalId
-    ? await pool.query(
-        `SELECT id, principal_id, org_path, action_type, approval_limit, valid_from, valid_to, revoked_at
-           FROM authority_grants WHERE principal_id = $1 ORDER BY org_path`,
-        [principalId],
-      )
-    : await pool.query(
-        `SELECT id, principal_id, org_path, action_type, approval_limit, valid_from, valid_to, revoked_at
-           FROM authority_grants ORDER BY principal_id, org_path`,
-      );
+  const { rows } = await readWithRetry((pool) =>
+    principalId
+      ? pool.query(
+          `SELECT id, principal_id, org_path, action_type, approval_limit, valid_from, valid_to, revoked_at
+             FROM authority_grants WHERE principal_id = $1 ORDER BY org_path`,
+          [principalId],
+        )
+      : pool.query(
+          `SELECT id, principal_id, org_path, action_type, approval_limit, valid_from, valid_to, revoked_at
+             FROM authority_grants ORDER BY principal_id, org_path`,
+        ),
+  );
   const now = Date.now();
   return rows.map((r) => {
     const validFrom = new Date(r.valid_from);
@@ -237,9 +261,8 @@ export interface PolicyRuleView {
 
 /** The SoD / compliance rules, read straight from the policy_rules table for the Controls view. */
 export async function getPolicyRules(): Promise<PolicyRuleView[]> {
-  const pool = await getPool();
-  const { rows } = await pool.query(
-    "SELECT id, rule_type, definition, active FROM policy_rules ORDER BY active DESC, rule_type",
+  const { rows } = await readWithRetry((pool) =>
+    pool.query("SELECT id, rule_type, definition, active FROM policy_rules ORDER BY active DESC, rule_type"),
   );
   return rows.map((r) => {
     const def = (r.definition ?? {}) as { code?: string; conflicting?: string[] };
@@ -259,15 +282,18 @@ export async function getPolicyRules(): Promise<PolicyRuleView[]> {
  * to simulate a privileged tamper, exactly as the demo narrates.
  */
 export async function tamperLatestLedger(): Promise<{ seq: number }> {
-  const pool = await getPool();
-  const { rows } = await pool.query("SELECT seq, payload FROM ledger ORDER BY seq DESC LIMIT 1");
-  const tip = rows[0];
-  if (!tip) throw new Error("ledger is empty");
-  await pool.query("UPDATE ledger SET payload = $1 WHERE seq = $2", [
-    JSON.stringify({ ...tip.payload, amount: "1" }),
-    tip.seq,
-  ]);
-  return { seq: Number(tip.seq) };
+  // Wrapped in withRetry: a concurrent decide() append can conflict this UPDATE at COMMIT
+  // (40001). The tamper-then-verify-red step is the demo money shot, so it must not flake.
+  return withRetry(async (client) => {
+    const { rows } = await client.query("SELECT seq, payload FROM ledger ORDER BY seq DESC LIMIT 1");
+    const tip = rows[0];
+    if (!tip) throw new Error("ledger is empty");
+    await client.query("UPDATE ledger SET payload = $1 WHERE seq = $2", [
+      JSON.stringify({ ...tip.payload, amount: "1" }),
+      tip.seq,
+    ]);
+    return { seq: Number(tip.seq) };
+  });
 }
 
 /** DEMO ONLY: clear decisions + ledger and reactivate every grant, for repeatable runs. */

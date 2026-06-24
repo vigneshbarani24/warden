@@ -1,116 +1,40 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Copy, Check } from "lucide-react";
-
-const codeExamples = [
-  {
-    label: "Decide",
-    code: `import { Warden } from "@warden/sdk";
-const warden = new Warden({ endpoint: process.env.WARDEN_URL });
-
-// Before the agent executes ANY business action:
-const v = await warden.decide({
-  actor:      "settlement-agent",
-  actionType: "approve_settlement",
-  resource:   "DEAL-CR-8801",
-  amount:     2_000_000,
-  orgPath:    "/global/trading/crude/",
-});
-
-if (v.verdict !== "allow") halt(v.reason);  // deny | escalate -> human`,
-  },
-  {
-    label: "cURL",
-    code: `curl -X POST https://your-warden.app/api/pdp/decide \\
-  -H "content-type: application/json" \\
-  -d '{
-    "actor":      "settlement-agent",
-    "actionType": "approve_settlement",
-    "resource":   "DEAL-CR-8801",
-    "amount":     2000000,
-    "orgPath":    "/global/trading/crude/"
-  }'
-
-# => { "verdict": "deny", "reason": "authority revoked 31s ago" }`,
-  },
-  {
-    label: "Revoke",
-    code: `// Flip the mandate; strong consistency propagates it everywhere.
-await warden.revokeGrant({ grantId: "GRANT-7af3" });
-
-// Re-run the same action: allow -> deny, the instant the revoke commits.
-const v = await warden.decide({
-  actor:      "settlement-agent",
-  actionType: "approve_settlement",
-  resource:   "DEAL-CR-8801",
-  amount:     2_000_000,
-  orgPath:    "/global/trading/crude/",
-});
-// v.verdict === "deny"`,
-  },
-];
 
 const features = [
   {
-    title: "TypeScript native",
-    description: "Strict, fully typed verdicts. No untyped decisions."
+    title: "TypeScript-native",
+    description: "Typed decide() input and verdict.",
   },
   {
     title: "Framework-agnostic",
-    description: "LangGraph, CrewAI, AgentCore, Joule, MCP gateways."
+    description: "LangGraph, CrewAI, AgentCore, SAP Joule — all POST the same contract.",
   },
   {
-    title: "One call, any action",
-    description: "decide() before every tool call. Allow, deny, escalate."
+    title: "allow · deny · escalate",
+    description: "One vocabulary, mapped to AuthZEN.",
   },
   {
-    title: "Defensible by default",
-    description: "Every verdict carries a reason and seals to the ledger."
+    title: "Sealed reason returned",
+    description: "The rule ids that fired come back with the verdict.",
   },
 ];
 
-const codeAnimationStyles = `
-  .dev-code-line {
-    opacity: 0;
-    transform: translateX(-8px);
-    animation: devLineReveal 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  }
-  
-  @keyframes devLineReveal {
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-  
-  .dev-code-char {
-    opacity: 0;
-    filter: blur(8px);
-    animation: devCharReveal 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  }
-  
-  @keyframes devCharReveal {
-    to {
-      opacity: 1;
-      filter: blur(0);
-    }
-  }
-`;
+const snippet = `import { WardenClient } from "@warden/sdk";
+const warden = new WardenClient({ baseUrl });
+
+const v = await warden.decide({
+  requestId, actor: "desk.agent",
+  actionType: "approve_settlement",
+  resource: "DEAL-88421", amount: 2_000_000,
+  orgPath: "/global/trading/gas/",
+});
+if (v.verdict !== "allow") halt(v.reason); // deny | escalate`;
 
 export function DevelopersSection() {
-  const [activeTab, setActiveTab] = useState(0);
-  const [copied, setCopied] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
-
-  const handleCopy = () => {
-    const example = codeExamples[activeTab];
-    if (!example) return;
-    navigator.clipboard.writeText(example.code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -126,125 +50,87 @@ export function DevelopersSection() {
 
   return (
     <section id="developers" ref={sectionRef} className="relative py-24 lg:py-32 overflow-hidden">
-      <style dangerouslySetInnerHTML={{ __html: codeAnimationStyles }} />
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-start">
-          {/* Left: Content */}
-          <div
-            className={`transition-all duration-700 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            }`}
-          >
-            <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-6">
-              <span className="w-8 h-px bg-foreground/30" />
-              For developers
-            </span>
-            <h2 className="text-3xl lg:text-5xl font-display tracking-tight mb-8">
-              Drop it into
-              <br />
-              <span className="text-muted-foreground">any agent.</span>
-            </h2>
-            <p className="text-xl text-muted-foreground mb-12 leading-relaxed">
-              One call before every agent action. Framework-agnostic.
-              Warden returns allow, deny, or escalate with a reason you can defend.
-            </p>
-            
-            {/* Features */}
-            <div className="grid grid-cols-2 gap-6">
-              {features.map((feature, index) => (
-                <div
-                  key={feature.title}
-                  className={`transition-all duration-500 ${
-                    isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-                  }`}
-                  style={{ transitionDelay: `${index * 50 + 200}ms` }}
-                >
-                  <h3 className="font-medium mb-1">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
-                </div>
-              ))}
+      {/* Code panel — absolute, bottom-right, behind the text (replaces the photo) */}
+      <div
+        className={`absolute bottom-12 right-0 w-[55%] hidden lg:block pointer-events-none transition-all duration-1000 delay-300 ${
+          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        }`}
+      >
+        <div className="ml-auto max-w-[640px] border border-foreground/10 bg-foreground text-background shadow-[0_24px_60px_-32px_rgba(20,23,26,0.45)]">
+          <div className="flex items-center justify-between border-b border-background/10 px-5 py-3">
+            <div className="flex gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-background/25" />
+              <span className="h-2.5 w-2.5 rounded-full bg-background/25" />
+              <span className="h-2.5 w-2.5 rounded-full bg-background/25" />
             </div>
+            <span className="font-mono text-[11px] text-background/40">govern.ts</span>
           </div>
-          
-          {/* Right: Code block */}
-          <div
-            className={`lg:sticky lg:top-32 transition-all duration-700 delay-200 ${
-              isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"
-            }`}
-          >
-            <div className="border border-foreground/10">
-              {/* Tabs */}
-              <div className="flex items-center border-b border-foreground/10">
-                {codeExamples.map((example, idx) => (
-                  <button
-                    key={example.label}
-                    type="button"
-                    onClick={() => setActiveTab(idx)}
-                    className={`px-6 py-4 text-sm font-mono transition-colors relative ${
-                      activeTab === idx
-                        ? "text-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {example.label}
-                    {activeTab === idx && (
-                      <span className="absolute bottom-0 left-0 right-0 h-px bg-foreground" />
-                    )}
-                  </button>
-                ))}
-                <div className="flex-1" />
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className="px-4 py-4 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="Copy code"
-                >
-                  {copied ? (
-                    <Check className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </button>
+          <pre className="overflow-x-auto p-6 font-mono text-[13px] leading-relaxed text-background/80">
+            {snippet}
+          </pre>
+        </div>
+        {/* Fade the left edge so it reads as a backdrop to the copy */}
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/55 to-transparent" />
+      </div>
+
+      {/* All text content sits on top */}
+      <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12">
+        {/* Header — full width */}
+        <div
+          className={`mb-16 transition-all duration-700 ${
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          }`}
+        >
+          <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-6">
+            <span className="w-8 h-px bg-foreground/30" />
+            Developer SDK
+          </span>
+          <h2 className="text-4xl md:text-5xl lg:text-7xl font-display tracking-tight leading-[0.9]">
+            Code your agents.
+            <br />
+            <span className="text-muted-foreground">Govern them in one call.</span>
+          </h2>
+        </div>
+
+        {/* Description + features — left half only */}
+        <div
+          className={`max-w-full lg:max-w-[50%] transition-all duration-700 delay-100 ${
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          }`}
+        >
+          <p className="text-xl text-muted-foreground mb-12 leading-relaxed max-w-md">
+            One call before every agent action. The{" "}
+            <span className="font-mono text-foreground">@warden/sdk</span> drop-in returns a typed
+            verdict with the reason you can defend.
+          </p>
+          <div className="grid grid-cols-2 gap-6">
+            {features.map((feature, index) => (
+              <div
+                key={feature.title}
+                className={`transition-all duration-500 ${
+                  isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                }`}
+                style={{ transitionDelay: `${index * 50 + 200}ms` }}
+              >
+                <h3 className="font-medium mb-1">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground">{feature.description}</p>
               </div>
-              
-              {/* Code content */}
-              <div className="p-8 font-mono text-sm bg-foreground/[0.01] min-h-[220px]">
-                <pre className="text-foreground/80">
-                  {(codeExamples[activeTab]?.code ?? "").split('\n').map((line, lineIndex) => (
-                    <div 
-                      key={`${activeTab}-${lineIndex}`} 
-                      className="leading-loose dev-code-line"
-                      style={{ animationDelay: `${lineIndex * 80}ms` }}
-                    >
-                      <span className="inline-flex">
-                        {line.split('').map((char, charIndex) => (
-                          <span
-                            key={`${activeTab}-${lineIndex}-${charIndex}`}
-                            className="dev-code-char"
-                            style={{
-                              animationDelay: `${lineIndex * 80 + charIndex * 15}ms`,
-                            }}
-                          >
-                            {char === ' ' ? '\u00A0' : char}
-                          </span>
-                        ))}
-                      </span>
-                    </div>
-                  ))}
-                </pre>
+            ))}
+          </div>
+
+          {/* Code panel — inline for mobile/tablet where the absolute one is hidden */}
+          <div className="mt-12 lg:hidden border border-foreground/10 bg-foreground text-background">
+            <div className="flex items-center justify-between border-b border-background/10 px-5 py-3">
+              <div className="flex gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-background/25" />
+                <span className="h-2.5 w-2.5 rounded-full bg-background/25" />
+                <span className="h-2.5 w-2.5 rounded-full bg-background/25" />
               </div>
+              <span className="font-mono text-[11px] text-background/40">govern.ts</span>
             </div>
-            
-            {/* Links */}
-            <div className="mt-6 flex items-center gap-6 text-sm">
-              <a href="/console" className="text-foreground hover:underline underline-offset-4">
-                Open the console
-              </a>
-              <span className="text-foreground/20">|</span>
-              <a href="/console" className="text-muted-foreground hover:text-foreground">
-                View on GitHub
-              </a>
-            </div>
+            <pre className="overflow-x-auto p-6 font-mono text-[12px] leading-relaxed text-background/80">
+              {snippet}
+            </pre>
           </div>
         </div>
       </div>

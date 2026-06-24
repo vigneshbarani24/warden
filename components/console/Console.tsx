@@ -5,20 +5,18 @@ import type { DecisionRow, GrantView, LedgerView } from "@/lib/pdp";
 import type { VerifyResult } from "@/lib/ledger";
 import { api } from "@/lib/api-client";
 import styles from "./console.module.css";
-import { ArchitectureView } from "./ArchitectureView";
 import { ProcessFlowsView } from "./ProcessFlowsView";
 import { ActivityView } from "./ActivityView";
-import { TimelineView } from "./TimelineView";
 import { ControlsView } from "./ControlsView";
+import { SimulationView } from "./SimulationView";
 
-type ViewKey = "operations" | "flows" | "timeline" | "controls" | "architecture" | "activity";
+type ViewKey = "simulation" | "operations" | "flows" | "controls" | "activity";
 
 const NAV: Array<{ key: ViewKey; label: string }> = [
+  { key: "simulation", label: "Simulation" },
   { key: "operations", label: "Operations" },
   { key: "flows", label: "Process Flows" },
-  { key: "timeline", label: "Timeline" },
   { key: "controls", label: "Controls" },
-  { key: "architecture", label: "Architecture" },
   { key: "activity", label: "Activity" },
 ];
 
@@ -38,7 +36,7 @@ const shortHash = (h: string): string => h.slice(0, 10);
 const verdictClass = (v: string): string => styles[v] ?? "";
 
 export function Console() {
-  const [view, setView] = useState<ViewKey>("operations");
+  const [view, setView] = useState<ViewKey>("simulation");
   const [decisions, setDecisions] = useState<DecisionRow[]>([]);
   const [ledger, setLedger] = useState<LedgerView[]>([]);
   const [allGrants, setAllGrants] = useState<GrantView[]>([]);
@@ -207,9 +205,8 @@ export function Console() {
         </nav>
 
         <main className={styles.main}>
-          {view === "architecture" && <ArchitectureView />}
+          {view === "simulation" && <SimulationView />}
           {view === "flows" && <ProcessFlowsView decisions={decisions} />}
-          {view === "timeline" && <TimelineView decisions={decisions} grants={allGrants} />}
           {view === "controls" && <ControlsView grants={allGrants} />}
           {view === "activity" && <ActivityView decisions={decisions} onRun={handleRunFleet} running={busy} />}
 

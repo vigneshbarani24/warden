@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
-  { name: "How it works", href: "#how-it-works" },
-  { name: "The stack", href: "#stack" },
-  { name: "Integrate", href: "#integrate" },
-  { name: "Pricing", href: "#pricing" },
+  { name: "Capabilities", href: "#features" },
+  { name: "Process", href: "#how-it-works" },
+  { name: "Use cases", href: "#use-cases" },
+  { name: "Architecture", href: "#stack" },
+  { name: "Security", href: "#security" },
 ];
 
 export function Navigation() {
@@ -65,8 +66,8 @@ export function Navigation() {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <a href="/console" className={`text-foreground/70 hover:text-foreground transition-all duration-500 ${isScrolled ? "text-xs" : "text-sm"}`}>
-              Sign in
+            <a href="#developers" className={`text-foreground/70 hover:text-foreground transition-all duration-500 ${isScrolled ? "text-xs" : "text-sm"}`}>
+              Developers
             </a>
             <Button
               asChild
@@ -136,7 +137,7 @@ export function Navigation() {
               className="flex-1 rounded-full h-14 text-base"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <a href="/console">Sign in</a>
+              <a href="#developers">Developers</a>
             </Button>
             <Button
               asChild

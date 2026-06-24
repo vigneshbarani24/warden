@@ -1,84 +1,129 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowRight, Check } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ArrowRight, Check, Zap } from "lucide-react";
 
-const plans = [
+type Plan = {
+  name: string;
+  description: string;
+  price: { monthly: number | null; annual: number | null };
+  features: string[];
+  cta: string;
+  highlight: boolean;
+};
+
+const plans: Plan[] = [
   {
-    name: "Team",
-    description: "Per-decision pricing for a single region",
-    price: { monthly: 0.002, annual: 0.0016 },
-    priceSuffix: "/decision",
+    name: "Pilot",
+    description: "For a single agent, proving value",
+    price: { monthly: 0, annual: 0 },
     features: [
-      "Core PDP evaluation engine",
-      "Single DSQL region",
-      "Hash-chained ledger + verify",
-      "Authority grants & approval limits",
-      "Typed @warden/sdk client",
+      "1 agent fleet",
+      "10,000 decisions / mo",
+      "Hash-chained ledger",
+      "Single region",
+      "Community support",
     ],
     cta: "Start free",
-    popular: false,
+    highlight: false,
   },
   {
-    name: "Business",
-    description: "Per-agent-seat for production fleets",
-    price: { monthly: 40, annual: 33 },
-    priceSuffix: "/ agent / mo",
+    name: "Team",
+    description: "For an agentic finance function",
+    price: { monthly: 2000, annual: 1700 },
     features: [
+      "25 agents",
+      "1,000,000 decisions / mo",
       "Active-active multi-region",
-      "Instant revocation everywhere",
-      "SoD policy authoring",
-      "SSO & role-based access",
-      "Audit export (SOX-grade)",
-      "Decision Inspector console",
+      "SoD + escalation policies",
+      "Decision trace + provenance",
+      "SSO",
       "Priority support",
     ],
-    cta: "Open the console",
-    popular: true,
+    cta: "Start pilot",
+    highlight: true,
   },
   {
     name: "Enterprise",
-    description: "For regulated, multi-region operations",
+    description: "The control plane of record",
     price: { monthly: null, annual: null },
-    priceSuffix: "",
     features: [
-      "Everything in Business",
-      "Dedicated DSQL cluster",
-      "Region pinning",
-      "SLA + design-partner support",
-      "On-prem deployment options",
-      "Custom policy packs",
-      "Security & compliance review",
-      "Custom contracts",
+      "Unlimited agents",
+      "Unlimited decisions",
+      "Dedicated regions + witness",
+      "External WORM anchor",
+      "SOX / EU AI Act retention",
+      "On-prem option",
+      "Dedicated support + SLA",
     ],
-    cta: "Contact us",
-    popular: false,
+    cta: "Contact sales",
+    highlight: false,
   },
 ];
 
 export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) setIsVisible(true);
+      },
+      { threshold: 0.1 },
+    );
+
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <section id="pricing" className="relative py-32 lg:py-40 border-t border-foreground/10">
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-        {/* Header */}
-        <div className="max-w-3xl mb-20">
-          <span className="font-mono text-xs tracking-widest text-muted-foreground uppercase block mb-6">
-            Pricing
-          </span>
-          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl tracking-tight text-foreground mb-6">
-            Priced per decision,
-            <br />
-            <span className="text-stroke">per agent</span>
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-xl">
-            Pay for the actions you govern. Scale from one region to active-active multi-region.
-          </p>
+    <section id="pricing" ref={sectionRef} className="relative py-32 lg:py-40">
+      <div className="mx-auto max-w-[1400px] px-6 lg:px-12">
+        {/* Header — dramatic offset */}
+        <div className="mb-20 grid gap-8 lg:grid-cols-12">
+          <div className="lg:col-span-7">
+            <span className="mb-3 inline-flex items-center gap-3 font-mono text-sm text-muted-foreground">
+              <span className="h-px w-12 bg-foreground/30" />
+              Pricing
+            </span>
+            <p className="mb-8 font-mono text-xs text-muted-foreground/80">
+              Proposed model — illustrative; no shipped product runs this exact hybrid today.
+            </p>
+            <h2
+              className={`font-display text-4xl leading-[0.9] tracking-tight transition-all duration-1000 md:text-5xl lg:text-7xl ${
+                isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+              }`}
+            >
+              Pay per
+              <br />
+              <span className="text-stroke">decision governed.</span>
+            </h2>
+          </div>
+
+          {/* Structural seal motif (replaces the v0 decorative image) */}
+          <div className="relative h-64 lg:col-span-5 lg:h-auto">
+            <div
+              className={`absolute inset-0 flex items-center justify-center transition-all duration-1000 delay-100 ${
+                isVisible ? "opacity-100" : "opacity-0"
+              }`}
+              aria-hidden="true"
+            >
+              <div className="relative flex h-44 w-44 items-center justify-center">
+                {/* Concentric seal rings */}
+                <span className="absolute inset-0 rounded-full border border-foreground/10" />
+                <span className="absolute inset-4 rounded-full border border-foreground/10" />
+                <span className="absolute inset-8 rounded-full border border-primary/30" />
+                <span className="absolute inset-[3.25rem] rounded-full border border-primary/50" />
+                <span className="font-display text-2xl text-primary">$</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Billing Toggle */}
-        <div className="flex items-center gap-4 mb-16">
+        {/* Billing toggle */}
+        <div className="mb-16 flex items-center gap-4">
           <span
             className={`text-sm transition-colors ${
               !isAnnual ? "text-foreground" : "text-muted-foreground"
@@ -88,10 +133,11 @@ export function PricingSection() {
           </span>
           <button
             onClick={() => setIsAnnual(!isAnnual)}
-            className="relative w-14 h-7 bg-foreground/10 rounded-full p-1 transition-colors hover:bg-foreground/20"
+            aria-label="Toggle annual billing"
+            className="relative h-7 w-14 rounded-full bg-foreground/10 p-1 transition-colors hover:bg-foreground/20"
           >
             <div
-              className={`w-5 h-5 bg-foreground rounded-full transition-transform duration-300 ${
+              className={`h-5 w-5 rounded-full bg-foreground transition-transform duration-300 ${
                 isAnnual ? "translate-x-7" : "translate-x-0"
               }`}
             />
@@ -104,83 +150,126 @@ export function PricingSection() {
             Annual
           </span>
           {isAnnual && (
-            <span className="ml-2 px-2 py-1 bg-foreground text-primary-foreground text-xs font-mono">
-              Save 17%
+            <span className="ml-2 bg-foreground px-2 py-1 font-mono text-xs text-background">
+              Save 15%
             </span>
           )}
         </div>
 
-        {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-px bg-foreground/10">
-          {plans.map((plan, idx) => (
-            <div
-              key={plan.name}
-              className={`relative p-8 lg:p-12 bg-background ${
-                plan.popular ? "md:-my-4 md:py-12 lg:py-16 border-2 border-foreground" : ""
-              }`}
-            >
-              {plan.popular && (
-                <span className="absolute -top-3 left-8 px-3 py-1 bg-foreground text-primary-foreground text-xs font-mono uppercase tracking-widest">
-                  Most Popular
-                </span>
-              )}
-
-              {/* Plan Header */}
-              <div className="mb-8">
-                <span className="font-mono text-xs text-muted-foreground">
-                  {String(idx + 1).padStart(2, "0")}
-                </span>
-                <h3 className="font-display text-3xl text-foreground mt-2">{plan.name}</h3>
-                <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
-              </div>
-
-              {/* Price */}
-              <div className="mb-8 pb-8 border-b border-foreground/10">
-                {plan.price.monthly !== null ? (
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-display text-5xl lg:text-6xl text-foreground">
-                      ${isAnnual ? plan.price.annual : plan.price.monthly}
-                    </span>
-                    <span className="text-muted-foreground">{plan.priceSuffix}</span>
-                  </div>
-                ) : (
-                  <span className="font-display text-4xl text-foreground">Custom</span>
-                )}
-              </div>
-
-              {/* Features */}
-              <ul className="space-y-4 mb-10">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-3">
-                    <Check className="w-4 h-4 text-foreground mt-0.5 shrink-0" />
-                    <span className="text-sm text-muted-foreground">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              {/* CTA */}
-              <button
-                className={`w-full py-4 flex items-center justify-center gap-2 text-sm font-medium transition-all group ${
-                  plan.popular
-                    ? "bg-foreground text-primary-foreground hover:bg-foreground/90"
-                    : "border border-foreground/20 text-foreground hover:border-foreground hover:bg-foreground/5"
-                }`}
+        {/* Pricing cards — horizontal layout with overlap */}
+        <div className="relative">
+          <div className="grid gap-4 lg:grid-cols-3 lg:gap-0">
+            {plans.map((plan, index) => (
+              <div
+                key={plan.name}
+                className={`relative border bg-background transition-all duration-700 ${
+                  plan.highlight
+                    ? "border-foreground lg:z-10 lg:-mx-2 lg:scale-105"
+                    : "border-foreground/10 lg:first:-mr-2 lg:last:-ml-2"
+                } ${isVisible ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"}`}
+                style={{ transitionDelay: `${index * 100}ms` }}
               >
-                {plan.cta}
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </button>
-            </div>
-          ))}
+                {/* Popular badge */}
+                {plan.highlight && (
+                  <div className="absolute -top-4 left-8 right-8 flex justify-center">
+                    <span className="inline-flex items-center gap-2 bg-foreground px-4 py-2 font-mono text-xs uppercase tracking-widest text-background">
+                      <Zap className="h-3 w-3" />
+                      Most Popular
+                    </span>
+                  </div>
+                )}
+
+                <div className="p-8 lg:p-10">
+                  {/* Plan header */}
+                  <div className="mb-8 border-b border-foreground/10 pb-8">
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <h3 className="mt-2 font-display text-2xl lg:text-3xl">{plan.name}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
+                  </div>
+
+                  {/* Price */}
+                  <div className="mb-8">
+                    {plan.price.monthly !== null ? (
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-display text-5xl lg:text-6xl">
+                          ${isAnnual ? plan.price.annual : plan.price.monthly}
+                        </span>
+                        <span className="text-sm text-muted-foreground">/month</span>
+                      </div>
+                    ) : (
+                      <span className="font-display text-4xl">Custom</span>
+                    )}
+                    {plan.price.monthly !== null && plan.price.monthly > 0 && (
+                      <p className="mt-2 font-mono text-xs text-muted-foreground">
+                        {isAnnual ? "billed annually" : "billed monthly"}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Features */}
+                  <ul className="mb-10 space-y-3">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-3">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <span className="text-sm text-muted-foreground">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* CTA */}
+                  <button
+                    className={`group flex w-full items-center justify-center gap-2 py-4 text-sm font-medium transition-all ${
+                      plan.highlight
+                        ? "bg-foreground text-background hover:bg-foreground/90"
+                        : "border border-foreground/20 text-foreground hover:border-foreground hover:bg-foreground/5"
+                    }`}
+                  >
+                    {plan.cta}
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Bottom Note */}
-        <p className="mt-12 text-center text-sm text-muted-foreground">
-          Illustrative pricing. All plans include the hash-chained ledger and chain verification.{" "}
-          <a href="/console" className="underline underline-offset-4 hover:text-foreground transition-colors">
+        {/* Bottom note with seal checks */}
+        <div
+          className={`mt-20 flex flex-col gap-8 border-t border-foreground/10 pt-12 transition-all duration-1000 delay-500 lg:flex-row lg:items-center lg:justify-between ${
+            isVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
+            <span className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-primary" />
+              Per-decision pricing
+            </span>
+            <span className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-primary" />
+              Tamper-evident ledger
+            </span>
+            <span className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-primary" />
+              Any framework
+            </span>
+          </div>
+          <a
+            href="/console"
+            className="text-sm underline underline-offset-4 transition-colors hover:text-foreground"
+          >
             Open the console
           </a>
-        </p>
+        </div>
       </div>
+
+      <style jsx>{`
+        .text-stroke {
+          -webkit-text-stroke: 1.5px currentColor;
+          -webkit-text-fill-color: transparent;
+        }
+      `}</style>
     </section>
   );
 }

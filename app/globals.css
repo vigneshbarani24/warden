@@ -103,6 +103,12 @@ html:has(.landingRoot) body {
 html:has(.landingRoot) {
   scroll-behavior: smooth;
 }
+/* The console is now light institutional too (matches the landing). The `.shell`
+   scope (console.module.css) redefines the console tokens; keep the page bone. */
+html:has(.shell),
+html:has(.shell) body {
+  background: var(--background);
+}
 
 ::selection {
   background: rgba(242, 106, 31, 0.28);

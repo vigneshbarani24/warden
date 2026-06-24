@@ -13,8 +13,10 @@ import { getPool, withRetry } from "../lib/db";
 import { decide } from "../lib/pdp";
 
 const LONDON_GAS_MANDATE = "11111111-1111-4111-8111-111111111111"; // fixed id — the revoke demo
-const FROM = "2026-01-01T00:00:00Z";
-const TO = "2027-01-01T00:00:00Z";
+// Now-relative window (±1 year): a fixed TO date would silently degrade every ALLOW/ESCALATE
+// to DENY once it passed, and resetDemo can't recover it. Each reseed re-centres the window.
+const FROM = new Date(Date.now() - 365 * 864e5).toISOString();
+const TO = new Date(Date.now() + 365 * 864e5).toISOString();
 
 const ORG: Array<[string, string, string]> = [
   ["/global/", "Global Trading", "firm"],

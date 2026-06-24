@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getRecentDecisions } from "@/lib/pdp";
+import { logAndMessage } from "@/lib/http";
 
 export const runtime = "nodejs";
 
@@ -9,6 +10,6 @@ export async function GET(req: Request) {
   try {
     return NextResponse.json(await getRecentDecisions(limit));
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return NextResponse.json({ error: logAndMessage("decisions", e) }, { status: 500 });
   }
 }

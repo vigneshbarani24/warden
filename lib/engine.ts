@@ -22,7 +22,10 @@ import type {
 
 /** A grant covers a resource when its org path is an ancestor-or-equal of the resource path. */
 function covers(grant: Grant, resourceOrgPath: string): boolean {
-  return resourceOrgPath.startsWith(grant.orgPath);
+  // Normalize to a guaranteed trailing slash so a grant on "/global/trading/gas" can't
+  // falsely cover the sibling "/global/trading/gasworks/" — a raw prefix has no segment boundary.
+  const norm = (p: string) => (p.endsWith("/") ? p : p + "/");
+  return norm(resourceOrgPath).startsWith(norm(grant.orgPath));
 }
 
 /** Most specific grant = longest matching org path. Assumes a non-empty list. */
@@ -68,7 +71,9 @@ export async function evaluate(
       firedRuleIds: [],
       evaluatedContext: {
         activeGrantCount: covering.length,
-        coveringGrantId: best.id,
+        // No grant's limit covered the amount — the reason cites the nearest/highest grant,
+        // but coveringGrantId stays null because none actually authorized this action.
+        coveringGrantId: null,
         limitChecked: best.approvalLimit,
         sodResult: "pass",
       },

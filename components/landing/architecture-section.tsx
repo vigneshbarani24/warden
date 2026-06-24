@@ -1,40 +1,65 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, ArrowDown } from "lucide-react";
 
-const NODES = [
-  { tag: "Memory", title: "Knowledge graph", sub: "What the agent knows — context, not permission." },
-  { tag: "Reasoning", title: "AI agent", sub: "LLM plans the next action — SAP Joule, Oracle, custom." },
-  { tag: "Hands · coarse", title: "MCP gateway / AgentCore", sub: "Identity & which tool it may reach. OAuth, 401/403." },
+// The Enterprise AI Operating System, as a stack. Warden is the governance layer
+// the gated process flow above runs through — so the same control extends to any
+// process. Everything rests on the ink Aurora DSQL substrate.
+interface EosLayer {
+  tag: string;
+  title: string;
+  sub: string;
+  own?: boolean;
+}
+
+const LAYERS: EosLayer[] = [
+  { tag: "Reasoning", title: "LLM", sub: "Plans the next action — SAP Joule, Oracle, a custom agent." },
+  { tag: "Memory", title: "Knowledge graph", sub: "What the agent knows. Context, not permission." },
+  { tag: "Hands", title: "MCP gateway / AgentCore", sub: "Which tool it may reach. OAuth, 401/403 — coarse access." },
   {
     tag: "Authority",
-    title: "Warden — business-authority PDP",
-    sub: "Active grants up the hierarchy · approval limits · segregation of duties.",
+    title: "Governance · Warden",
+    sub: "Active grants up the hierarchy · approval limits · segregation of duties → allow / deny / escalate, with a reason.",
     own: true,
   },
-  { tag: "Execution", title: "ERP / tools", sub: "Executes only on allow." },
+  { tag: "Execution", title: "ERP / tools", sub: "Acts only on allow." },
 ];
 
-function Node({ n }: { n: (typeof NODES)[number] }) {
+const CALLOUTS: ReadonlyArray<readonly [string, string]> = [
+  ["Behind the coarse gateway", "MCP / AgentCore gates which tool an agent reaches. Warden gates whether the business permits the action."],
+  ["Orchestrators call it", "LangGraph, CrewAI, AgentCore invoke decide(); an escalate lands in their human-in-the-loop."],
+  ["Guardrails are orthogonal", "Content safety checks the text. Warden checks authority — a polite $2M from a revoked approver is still denied."],
+];
+
+function Layer({ n, show, i }: { n: EosLayer; show: boolean; i: number }) {
   return (
     <div
-      className={`flex-1 rounded-lg border p-5 ${
+      className={`flex items-center gap-4 rounded-lg border px-5 py-4 transition-all duration-700 sm:gap-6 ${
         n.own
           ? "border-primary bg-primary/[0.06] shadow-[0_0_0_1px_var(--color-primary)]"
-          : "border-foreground/15 bg-card/40"
-      }`}
+          : "border-foreground/12 bg-card/40"
+      } ${show ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
+      style={{ transitionDelay: `${i * 90}ms` }}
     >
-      <div className={`font-mono text-[10px] uppercase tracking-widest mb-3 ${n.own ? "text-primary" : "text-muted-foreground"}`}>
+      <span
+        className={`w-24 shrink-0 font-mono text-[10px] uppercase tracking-[0.18em] sm:w-28 ${
+          n.own ? "text-primary" : "text-muted-foreground"
+        }`}
+      >
         {n.tag}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          {n.own && <span aria-hidden className="font-mono text-primary">▶</span>}
+          <span className="font-display text-lg leading-snug">{n.title}</span>
+        </div>
+        <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{n.sub}</p>
       </div>
-      <div className="font-display text-lg leading-snug mb-2">{n.title}</div>
-      <p className="text-[13px] text-muted-foreground leading-relaxed">{n.sub}</p>
       {n.own && (
-        <div className="mt-4 flex flex-wrap gap-1.5">
-          <span className="font-mono text-[10px] px-2 py-0.5 border border-allow text-allow">allow</span>
-          <span className="font-mono text-[10px] px-2 py-0.5 border border-destructive text-destructive">deny</span>
-          <span className="font-mono text-[10px] px-2 py-0.5 border border-escalate text-escalate">escalate</span>
+        <div className="hidden shrink-0 gap-1.5 md:flex">
+          <span className="border border-allow px-2 py-0.5 font-mono text-[10px] text-allow">allow</span>
+          <span className="border border-destructive px-2 py-0.5 font-mono text-[10px] text-destructive">deny</span>
+          <span className="border border-escalate px-2 py-0.5 font-mono text-[10px] text-escalate">escalate</span>
         </div>
       )}
     </div>
@@ -43,7 +68,7 @@ function Node({ n }: { n: (typeof NODES)[number] }) {
 
 export function ArchitectureSection() {
   const [visible, setVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -58,60 +83,51 @@ export function ArchitectureSection() {
 
   return (
     <section id="stack" ref={ref} className="relative py-24 lg:py-32">
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-        <div className="mb-16 lg:mb-20 max-w-3xl">
-          <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-6">
-            <span className="w-8 h-px bg-foreground/30" />
+      <div className="mx-auto max-w-[1400px] px-6 lg:px-12">
+        <div className="mb-14 max-w-3xl lg:mb-16">
+          <span className="mb-6 inline-flex items-center gap-3 font-mono text-sm text-muted-foreground">
+            <span className="h-px w-8 bg-foreground/30" />
             Architecture
           </span>
           <h2
-            className={`text-3xl lg:text-5xl font-display tracking-tight transition-all duration-700 ${
-              visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            className={`font-display text-4xl tracking-tight transition-all duration-700 lg:text-6xl ${
+              visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
             }`}
           >
             Where Warden sits in the AI operating system.
           </h2>
-          <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
-            The knowledge graph is the agent&apos;s memory. MCP is its hands. Warden is its authority — the
-            business decision the other layers delegate downstream.
+          <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+            The gated process flow above runs through one layer of the stack — the governance layer. Swap the
+            process, the gate stays. That is how the same control extends to any agent, any domain.
           </p>
         </div>
 
-        {/* Flow */}
-        <div className="flex flex-col lg:flex-row items-stretch gap-3">
-          {NODES.map((n, i) => (
-            <div key={n.title} className="flex flex-col lg:flex-row items-stretch lg:flex-1 gap-3">
-              <Node n={n} />
-              {i < NODES.length - 1 && (
-                <div className="flex items-center justify-center text-foreground/30 shrink-0">
-                  <ArrowRight className="hidden lg:block w-5 h-5" />
-                  <ArrowDown className="lg:hidden w-5 h-5" />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Ledger + DSQL base */}
-        <div className="mt-6 rounded-lg border border-foreground/15 bg-card/40 px-6 py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div className="font-mono text-[13px] text-foreground/80">
-            Warden writes every verdict → <span className="text-primary">hash-chained, tamper-evident ledger</span>
+        {/* The EOS stack */}
+        <div className="overflow-hidden rounded-xl border border-foreground/12 bg-card/30 p-3 sm:p-4">
+          <div className="mb-3 px-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            The enterprise AI operating system
           </div>
-          <div className="font-mono text-[12px] text-muted-foreground">
-            Underpinned by Amazon Aurora DSQL · strongly consistent · active-active multi-region
+          <div className="flex flex-col gap-2.5">
+            {LAYERS.map((n, i) => (
+              <Layer key={n.title} n={n} show={visible} i={i} />
+            ))}
+          </div>
+
+          {/* ink Aurora DSQL substrate */}
+          <div className="mt-2.5 flex flex-col gap-2 rounded-lg bg-foreground px-5 py-4 text-background sm:flex-row sm:items-center sm:justify-between">
+            <span className="font-display text-base tracking-tight">Amazon Aurora DSQL</span>
+            <span className="font-mono text-[11px] text-background/60">
+              strongly consistent · active-active · the hash-chained, tamper-evident ledger
+            </span>
           </div>
         </div>
 
         {/* Callouts */}
-        <div className="mt-10 grid sm:grid-cols-3 gap-5">
-          {[
-            ["Behind the coarse gateway", "MCP/AgentCore gates which tool; Warden gates whether the business permits it."],
-            ["Orchestrators call it", "LangGraph, CrewAI, AgentCore invoke decide(); an escalate lands in their human-in-the-loop."],
-            ["Guardrails are orthogonal", "Content safety checks the text. Warden checks authority — a polite $2M from a revoked approver still gets denied."],
-          ].map(([t, d]) => (
+        <div className="mt-10 grid gap-5 sm:grid-cols-3">
+          {CALLOUTS.map(([t, d]) => (
             <div key={t} className="border-t border-foreground/15 pt-5">
-              <div className="font-display text-lg mb-2">{t}</div>
-              <p className="text-[14px] text-muted-foreground leading-relaxed">{d}</p>
+              <div className="mb-2 font-display text-lg">{t}</div>
+              <p className="text-[14px] leading-relaxed text-muted-foreground">{d}</p>
             </div>
           ))}
         </div>

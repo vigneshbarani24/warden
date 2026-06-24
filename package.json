@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Governance PDP + tamper-evident audit ledger for enterprise AI agents, on Amazon Aurora DSQL.",
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

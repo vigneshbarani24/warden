@@ -1,7 +1,7 @@
 /**
- * Live end-to-end proof against the real DSQL cluster:
- *   1) clean approval -> allow      2) revoke grant      3) same approval -> deny
- *   4) over-limit -> escalate       5) idempotent replay 6) tamper -> chain break -> restore
+ * Live end-to-end proof against the real DSQL cluster (Global Trading world):
+ *   1) clean capture -> allow      2) revoke mandate    3) same capture -> deny
+ *   4) over-limit -> escalate      5) idempotent replay 6) tamper -> chain break -> restore
  *
  *   npx tsx scripts/demo-verify.ts
  */
@@ -10,34 +10,34 @@ import { randomUUID } from "node:crypto";
 import { decide, revokeGrant, verifyLedger, getLedger } from "../lib/pdp";
 import { getPool } from "../lib/db";
 
-const PRIYA_GRANT = "11111111-1111-4111-8111-111111111111";
+const GAS_MANDATE = "11111111-1111-4111-8111-111111111111"; // liam.obrien capture_trade gas, $3M
 
 async function reactivate(): Promise<void> {
   const pool = await getPool();
-  await pool.query("UPDATE authority_grants SET revoked_at = NULL WHERE id = $1", [PRIYA_GRANT]);
+  await pool.query("UPDATE authority_grants SET revoked_at = NULL WHERE id = $1", [GAS_MANDATE]);
 }
 
 async function main(): Promise<void> {
   await reactivate();
   const base = {
-    actor: "priya.nair",
-    actionType: "approve_payment",
-    resource: "INV-88421",
-    orgPath: "/root/finance/ap/",
+    actor: "liam.obrien",
+    actionType: "capture_trade",
+    resource: "DEAL-NG-VERIFY",
+    orgPath: "/global/trading/gas/",
   };
 
   const r1 = await decide({ requestId: randomUUID(), ...base, amount: 2_000_000 });
-  console.log("1) clean $2M approval      ->", r1.verdict.toUpperCase(), "|", r1.reason);
+  console.log("1) clean $2M capture       ->", r1.verdict.toUpperCase(), "|", r1.reason);
 
-  const rev = await revokeGrant(PRIYA_GRANT);
-  console.log("2) revoke Priya's grant    -> revoked at", rev.revokedAt);
+  const rev = await revokeGrant(GAS_MANDATE);
+  console.log("2) revoke gas mandate      -> revoked at", rev.revokedAt);
 
   const r2 = await decide({ requestId: randomUUID(), ...base, amount: 2_000_000 });
   console.log("3) same $2M after revoke   ->", r2.verdict.toUpperCase(), "|", r2.reason);
 
   await reactivate();
-  const r3 = await decide({ requestId: randomUUID(), ...base, amount: 9_000_000 });
-  console.log("4) $9M over $5M limit      ->", r3.verdict.toUpperCase(), "|", r3.reason);
+  const r3 = await decide({ requestId: randomUUID(), ...base, amount: 5_000_000 });
+  console.log("4) $5M over $3M mandate     ->", r3.verdict.toUpperCase(), "|", r3.reason);
 
   const rid = randomUUID();
   const a = await decide({ requestId: rid, ...base, amount: 1_000 });

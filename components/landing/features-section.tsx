@@ -2,347 +2,323 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const features = [
+// Computed once on the client; canvas loops paint one static frame when set.
+const REDUCED_MOTION =
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+type Feature = {
+  number: string;
+  title: string;
+  description: string;
+  stats: { value: string; label: string };
+};
+
+const features: Feature[] = [
   {
     number: "01",
     title: "Authority grants",
-    description: "Who can do what, where, up to how much — resolved up the org hierarchy. No grant, no action.",
-    visual: "ai",
+    description:
+      "Who can do what, where, up to how much — resolved up the org hierarchy. No active grant, no action.",
+    stats: { value: "deny", label: "no grant" },
   },
   {
     number: "02",
     title: "Approval limits & escalation",
-    description: "Within mandate it passes; over it, the action escalates to the nearest authority that covers it.",
-    visual: "deploy",
+    description:
+      "Within mandate it passes; over it, the action escalates to the nearest authority that covers it.",
+    stats: { value: "escalate", label: "over limit" },
   },
   {
     number: "03",
     title: "Segregation of duties",
-    description: "An agent can't settle the deal it captured. Conflicting actions on the same resource are denied.",
-    visual: "collab",
+    description:
+      "An agent can't settle the deal it captured. Conflicting actions on the same resource are denied.",
+    stats: { value: "SOD-FBO-01", label: "the Barings wall" },
   },
   {
     number: "04",
     title: "Tamper-evident ledger",
-    description: "Every verdict is hash-chained into an append-only record. Any after-the-fact edit is detectable.",
-    visual: "security",
+    description:
+      "Every verdict is hash-chained into an append-only record. Any after-the-fact edit is detectable.",
+    stats: { value: "SHA-256", label: "sealed" },
   },
 ];
 
-function DeployVisual() {
-  return (
-    <svg viewBox="0 0 200 160" className="w-full h-full">
-      <defs>
-        <clipPath id="deployClip">
-          <rect x="30" y="20" width="140" height="120" rx="4" />
-        </clipPath>
-      </defs>
-      
-      {/* Container */}
-      <rect x="30" y="20" width="140" height="120" rx="4" fill="none" stroke="currentColor" strokeWidth="2" />
-      
-      {/* Animated bars */}
-      <g clipPath="url(#deployClip)">
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-          <rect
-            key={i}
-            x="40"
-            y={35 + i * 16}
-            width="120"
-            height="10"
-            rx="2"
-            fill="currentColor"
-            opacity="0.15"
-          >
-            <animate
-              attributeName="opacity"
-              values="0.15;0.8;0.15"
-              dur="2s"
-              begin={`${i * 0.15}s`}
-              repeatCount="indefinite"
-            />
-            <animate
-              attributeName="width"
-              values="20;120;20"
-              dur="2s"
-              begin={`${i * 0.15}s`}
-              repeatCount="indefinite"
-            />
-          </rect>
-        ))}
-      </g>
-      
-      {/* Progress indicator */}
-      <circle cx="100" cy="155" r="3" fill="currentColor" opacity="0.3">
-        <animate attributeName="opacity" values="0.3;1;0.3" dur="1s" repeatCount="indefinite" />
-      </circle>
-    </svg>
-  );
-}
-
-function AIVisual() {
-  return (
-    <svg viewBox="0 0 200 160" className="w-full h-full">
-      {/* Central node */}
-      <circle cx="100" cy="80" r="12" fill="currentColor">
-        <animate attributeName="r" values="12;14;12" dur="2s" repeatCount="indefinite" />
-      </circle>
-      
-      {/* Orbiting nodes */}
-      {[0, 1, 2, 3, 4, 5].map((i) => {
-        const angle = (i * 60) * (Math.PI / 180);
-        const radius = 50;
-        return (
-          <g key={i}>
-            {/* Connection line */}
-            <line
-              x1="100"
-              y1="80"
-              x2={100 + Math.cos(angle) * radius}
-              y2={80 + Math.sin(angle) * radius}
-              stroke="currentColor"
-              strokeWidth="1"
-              opacity="0.3"
-            >
-              <animate
-                attributeName="opacity"
-                values="0.3;0.8;0.3"
-                dur="2s"
-                begin={`${i * 0.3}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            
-            {/* Outer node */}
-            <circle
-              cx={100 + Math.cos(angle) * radius}
-              cy={80 + Math.sin(angle) * radius}
-              r="6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <animate
-                attributeName="r"
-                values="6;8;6"
-                dur="2s"
-                begin={`${i * 0.3}s`}
-                repeatCount="indefinite"
-              />
-            </circle>
-          </g>
-        );
-      })}
-      
-      {/* Pulse rings */}
-      <circle cx="100" cy="80" r="30" fill="none" stroke="currentColor" strokeWidth="1" opacity="0">
-        <animate attributeName="r" values="20;60" dur="2s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="0.5;0" dur="2s" repeatCount="indefinite" />
-      </circle>
-    </svg>
-  );
-}
-
-function CollabVisual() {
-  return (
-    <svg viewBox="0 0 200 160" className="w-full h-full">
-      {/* User A */}
-      <g>
-        <rect x="30" y="50" width="50" height="60" rx="4" fill="none" stroke="currentColor" strokeWidth="2" />
-        <text x="55" y="85" textAnchor="middle" fontSize="20" fontFamily="monospace" fill="currentColor">A</text>
-        <circle cx="55" cy="35" r="12" fill="none" stroke="currentColor" strokeWidth="2" />
-      </g>
-      
-      {/* User B */}
-      <g>
-        <rect x="120" y="50" width="50" height="60" rx="4" fill="none" stroke="currentColor" strokeWidth="2" />
-        <text x="145" y="85" textAnchor="middle" fontSize="20" fontFamily="monospace" fill="currentColor">B</text>
-        <circle cx="145" cy="35" r="12" fill="none" stroke="currentColor" strokeWidth="2" />
-      </g>
-      
-      {/* Connection */}
-      <line x1="80" y1="80" x2="120" y2="80" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4">
-        <animate attributeName="stroke-dashoffset" values="0;-8" dur="0.5s" repeatCount="indefinite" />
-      </line>
-      
-      {/* Data packet */}
-      <circle r="4" fill="currentColor">
-        <animateMotion dur="1.5s" repeatCount="indefinite">
-          <mpath href="#dataPath" />
-        </animateMotion>
-      </circle>
-      <path id="dataPath" d="M 80 80 L 120 80" fill="none" />
-      
-      {/* Sync indicator */}
-      <g transform="translate(100, 130)">
-        <circle r="6" fill="none" stroke="currentColor" strokeWidth="2">
-          <animate attributeName="r" values="6;10;6" dur="1s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite" />
-        </circle>
-      </g>
-    </svg>
-  );
-}
-
-function SecurityVisual() {
-  return (
-    <svg viewBox="0 0 200 160" className="w-full h-full">
-      {/* Shield */}
-      <path
-        d="M 100 20 L 150 40 L 150 90 Q 150 130 100 145 Q 50 130 50 90 L 50 40 Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      />
-      
-      {/* Inner shield */}
-      <path
-        d="M 100 35 L 135 50 L 135 85 Q 135 115 100 128 Q 65 115 65 85 L 65 50 Z"
-        fill="currentColor"
-        opacity="0.1"
-      >
-        <animate attributeName="opacity" values="0.1;0.2;0.1" dur="2s" repeatCount="indefinite" />
-      </path>
-      
-      {/* Lock icon */}
-      <rect x="85" y="70" width="30" height="25" rx="3" fill="currentColor" />
-      <path
-        d="M 90 70 L 90 60 Q 90 50 100 50 Q 110 50 110 60 L 110 70"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      
-      {/* Keyhole */}
-      <circle cx="100" cy="80" r="4" fill="white" />
-      <rect x="98" y="82" width="4" height="8" fill="white" />
-      
-      {/* Scan lines */}
-      <line x1="60" y1="60" x2="140" y2="60" stroke="currentColor" strokeWidth="1" opacity="0">
-        <animate attributeName="y1" values="40;120;40" dur="3s" repeatCount="indefinite" />
-        <animate attributeName="y2" values="40;120;40" dur="3s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="0;0.5;0" dur="3s" repeatCount="indefinite" />
-      </line>
-    </svg>
-  );
-}
-
-function AnimatedVisual({ type }: { type: string }) {
-  switch (type) {
-    case "deploy":
-      return <DeployVisual />;
-    case "ai":
-      return <AIVisual />;
-    case "collab":
-      return <CollabVisual />;
-    case "security":
-      return <SecurityVisual />;
-    default:
-      return <DeployVisual />;
-  }
-}
-
-function FeatureCard({ feature, index }: { feature: typeof features[0]; index: number }) {
-  const [isVisible, setIsVisible] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
+// Floating dot particles — retinted from the reference's white to ink/seal,
+// with the seal accent rising under the cursor.
+function ParticleVisualization() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const frameRef = useRef(0);
+  const mouseRef = useRef({ x: 0.5, y: 0.5 });
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) setIsVisible(true);
-      },
-      { threshold: 0.2 }
-    );
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    if (cardRef.current) observer.observe(cardRef.current);
-    return () => observer.disconnect();
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = {
+        x: (e.clientX - rect.left) / rect.width,
+        y: (e.clientY - rect.top) / rect.height,
+      };
+    };
+    canvas.addEventListener("mousemove", handleMouseMove);
+
+    // Generate stable particle positions
+    const COUNT = 70;
+    const particles = Array.from({ length: COUNT }, (_, i) => {
+      const seed = i * 1.618;
+      return {
+        bx: (seed * 127.1) % 1,
+        by: (seed * 311.7) % 1,
+        phase: seed * Math.PI * 2,
+        speed: 0.4 + (seed % 0.4),
+        radius: 1.2 + (seed % 2.2),
+      };
+    });
+
+    let time = 0;
+    const render = () => {
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const mx = mouseRef.current.x;
+      const my = mouseRef.current.y;
+
+      particles.forEach((p) => {
+        const flowX = Math.sin(time * p.speed * 0.4 + p.phase) * 38;
+        const flowY = Math.cos(time * p.speed * 0.3 + p.phase * 0.7) * 24;
+
+        const bx = p.bx * w;
+        const by = p.by * h;
+        const dx = p.bx - mx;
+        const dy = p.by - my;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const influence = Math.max(0, 1 - dist * 2.8);
+
+        const x = bx + flowX + influence * Math.cos(time + p.phase) * 36;
+        const y = by + flowY + influence * Math.sin(time + p.phase) * 36;
+
+        const pulse = Math.sin(time * p.speed + p.phase) * 0.5 + 0.5;
+        const alpha = 0.05 + pulse * 0.14 + influence * 0.24;
+
+        ctx.beginPath();
+        ctx.arc(x, y, p.radius + pulse * 0.8, 0, Math.PI * 2);
+        // ink base; oxblood seal blooms where the cursor pulls.
+        ctx.fillStyle =
+          influence > 0.18
+            ? `rgba(110, 29, 36, ${alpha + influence * 0.25})`
+            : `rgba(20, 23, 26, ${alpha})`;
+        ctx.fill();
+      });
+
+      time += 0.016;
+      if (!REDUCED_MOTION) frameRef.current = requestAnimationFrame(render);
+    };
+    render();
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      cancelAnimationFrame(frameRef.current);
+    };
   }, []);
 
   return (
-    <div
-      ref={cardRef}
-      className={`group relative transition-all duration-700 ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-      }`}
-      style={{ transitionDelay: `${index * 100}ms` }}
-    >
-      <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 py-12 lg:py-20 border-b border-foreground/10">
-        {/* Number */}
-        <div className="shrink-0">
-          <span className="font-mono text-sm text-muted-foreground">{feature.number}</span>
-        </div>
-        
-        {/* Content */}
-        <div className="flex-1 grid lg:grid-cols-2 gap-8 items-center">
-          <div>
-            <h3 className="text-3xl lg:text-4xl font-display mb-4 group-hover:translate-x-2 transition-transform duration-500">
-              {feature.title}
-            </h3>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              {feature.description}
-            </p>
-          </div>
-          
-          {/* Visual */}
-          <div className="flex justify-center lg:justify-end">
-            <div className="w-48 h-40 text-foreground">
-              <AnimatedVisual type={feature.visual} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 pointer-events-auto"
+      style={{ width: "100%", height: "100%" }}
+    />
   );
 }
 
 export function FeaturesSection() {
   const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) setIsVisible(true);
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
 
+  const lead = features[0]!;
+  const supporting = features.slice(1);
+
   return (
-    <section
-      id="features"
-      ref={sectionRef}
-      className="relative py-24 lg:py-32"
-    >
+    <section id="features" ref={sectionRef} className="relative py-24 lg:py-32 overflow-hidden">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-        {/* Header */}
-        <div className="mb-16 lg:mb-24">
-          <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-6">
-            <span className="w-8 h-px bg-foreground/30" />
-            Capabilities
-          </span>
-          <h2
-            className={`text-3xl lg:text-5xl font-display tracking-tight transition-all duration-700 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
-          >
-            The decision, before the action.
-            <br />
-            <span className="text-muted-foreground">Every time, with a reason.</span>
-          </h2>
+        {/* Header — diagonal: heading left, lead right */}
+        <div className="relative mb-24 lg:mb-32">
+          <div className="grid lg:grid-cols-12 gap-8 items-end">
+            <div className="lg:col-span-7">
+              <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-6">
+                <span className="w-12 h-px bg-foreground/30" />
+                Capabilities
+              </span>
+              <h2
+                className={`text-4xl md:text-5xl lg:text-7xl font-display tracking-tight leading-[0.9] transition-all duration-1000 ${
+                  isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+                }`}
+              >
+                The decision, before the action.
+                <br />
+                <span className="text-muted-foreground">Every time, with a reason.</span>
+              </h2>
+            </div>
+            <div className="lg:col-span-5 lg:pb-4">
+              <p
+                className={`text-xl text-muted-foreground leading-relaxed transition-all duration-1000 delay-200 ${
+                  isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                }`}
+              >
+                The engine, in four checks. Authority, limit, segregation, seal — resolved in one
+                transaction before the action commits.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Features List */}
-        <div>
-          {features.map((feature, index) => (
-            <FeatureCard key={feature.number} feature={feature} index={index} />
+        {/* Bento — large lead card (01) over three supporting cards */}
+        <div className="grid lg:grid-cols-12 gap-4 lg:gap-6">
+          {/* Large feature card with the retinted particle field */}
+          <div
+            className={`lg:col-span-12 relative bg-foreground/[0.02] border border-foreground/10 min-h-[460px] overflow-hidden group transition-all duration-700 flex ${
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+            }`}
+          >
+            {/* Left: text content over the canvas */}
+            <div className="relative flex-1 p-8 lg:p-12">
+              <ParticleVisualization />
+              <div className="relative z-10 pointer-events-none">
+                <span className="font-mono text-sm text-muted-foreground">{lead.number}</span>
+                <h3 className="text-3xl lg:text-4xl font-display mt-4 mb-6 group-hover:translate-x-2 transition-transform duration-500">
+                  {lead.title}
+                </h3>
+                <p className="text-lg text-muted-foreground leading-relaxed max-w-md mb-8">
+                  {lead.description}
+                </p>
+                <div>
+                  <span className="text-4xl lg:text-5xl font-display lowercase text-primary">
+                    {lead.stats.value}
+                  </span>
+                  <span className="block text-sm text-muted-foreground font-mono mt-2">
+                    {lead.stats.label}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: structural panel — the authority resolution, as quiet data (no photo) */}
+            <div className="hidden lg:block relative w-[42%] shrink-0 overflow-hidden border-l border-foreground/10">
+              <div
+                className="absolute inset-0 opacity-[0.6]"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(to right, rgba(20,23,26,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(20,23,26,0.05) 1px, transparent 1px)",
+                  backgroundSize: "44px 44px",
+                }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center p-10">
+                <div className="w-full max-w-xs font-mono text-[12px] leading-relaxed">
+                  <div className="mb-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                    resolve authority
+                  </div>
+                  <div className="space-y-1.5 text-foreground/70">
+                    <div className="text-muted-foreground">/global/trading/</div>
+                    <div className="flex items-center justify-between pl-3">
+                      <span>/crude/</span>
+                      <span className="text-allow">grant ✓</span>
+                    </div>
+                    <div className="flex items-center justify-between pl-3">
+                      <span>/gas/</span>
+                      <span className="text-destructive">revoked ✕</span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between border-t border-foreground/10 pt-3">
+                      <span className="text-muted-foreground">limit</span>
+                      <span>$3,000,000</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">duties</span>
+                      <span className="text-escalate">SOD-FBO-01</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">verdict</span>
+                      <span className="text-primary">deny</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-background/40" />
+            </div>
+          </div>
+
+          {/* Three supporting cards */}
+          {supporting.map((feature, i) => (
+            <SupportingCard key={feature.number} feature={feature} index={i} />
           ))}
         </div>
       </div>
     </section>
+  );
+}
+
+function SupportingCard({ feature, index }: { feature: Feature; index: number }) {
+  const [visible, setVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) setVisible(true);
+      },
+      { threshold: 0.2 },
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`group relative lg:col-span-4 border border-foreground/10 bg-card/40 p-8 min-h-[260px] flex flex-col transition-all duration-700 hover:border-foreground/30 hover:bg-foreground/[0.02] ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+      }`}
+      style={{ transitionDelay: `${index * 100 + 150}ms` }}
+    >
+      <span className="font-mono text-sm text-muted-foreground">{feature.number}</span>
+      <h3 className="text-2xl lg:text-3xl font-display mt-4 mb-4 group-hover:translate-x-2 transition-transform duration-500">
+        {feature.title}
+      </h3>
+      <p className="text-[15px] text-muted-foreground leading-relaxed mb-8">{feature.description}</p>
+      <div className="mt-auto">
+        <span className="font-mono text-2xl lg:text-3xl text-primary">{feature.stats.value}</span>
+        <span className="block text-xs text-muted-foreground font-mono mt-2">
+          {feature.stats.label}
+        </span>
+      </div>
+    </div>
   );
 }

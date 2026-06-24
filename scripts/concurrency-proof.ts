@@ -37,7 +37,7 @@ async function main(): Promise<void> {
     try {
       await a.query(
         `INSERT INTO decisions (id, request_id, actor, action_type, resource, amount, verdict, reason, evaluated_context)
-         VALUES (gen_random_uuid(), $1, 'priya.nair', 'approve_payment', 'INV-CONC', '2000000', 'allow', 'would-be stale allow', '{}')`,
+         VALUES (gen_random_uuid(), $1, 'liam.obrien', 'capture_trade', 'DEAL-NG-CONC', '2000000', 'allow', 'would-be stale allow', '{}')`,
         ["conc-" + Date.now().toString()],
       );
       await a.query("COMMIT");
@@ -50,7 +50,10 @@ async function main(): Promise<void> {
     b.release();
   }
 
+  // Re-arm the mandate and clean up any decision this proof committed (on the non-conflict path),
+  // so it never pollutes the live feed.
   await pool.query("UPDATE authority_grants SET revoked_at = NULL WHERE id = $1", [GRANT]);
+  await pool.query("DELETE FROM decisions WHERE request_id LIKE 'conc-%'");
   await pool.end();
 
   console.log("Concurrent revoke during a FOR UPDATE-locked decision -> A conflicted (40001):", conflicted);
