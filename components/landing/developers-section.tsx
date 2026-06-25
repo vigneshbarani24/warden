@@ -81,14 +81,14 @@ export function DevelopersSection() {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
         >
-          <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-6">
-            <span className="w-8 h-px bg-foreground/30" />
-            Developer SDK
+          <span className="inline-flex items-center gap-2.5 mb-6 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="h-3.5 w-px bg-[var(--color-seal)]" />
+            The contract
           </span>
-          <h2 className="text-4xl md:text-5xl lg:text-7xl font-display tracking-tight leading-[0.9]">
+          <h2 className="warden-display warden-display-xl">
             Code your agents.
             <br />
-            <span className="text-muted-foreground">Govern them in one call.</span>
+            <span className="font-normal text-muted-foreground">Govern them in one call.</span>
           </h2>
         </div>
 

@@ -48,9 +48,16 @@ const CASES = [
 ];
 
 function verdictClass(v: string): string {
-  if (v === "DENY") return "text-destructive border-destructive";
+  if (v === "DENY") return "text-deny border-deny";
   if (v === "ESCALATE") return "text-escalate border-escalate";
   return "text-allow border-allow";
+}
+
+// Glyph carries the verdict independent of hue (colorblind-safe channel).
+function verdictGlyph(v: string): string {
+  if (v === "DENY") return "✕";
+  if (v === "ESCALATE") return "▲";
+  return "✓";
 }
 
 function CaseCard({ c, index }: { c: (typeof CASES)[number]; index: number }) {
@@ -78,11 +85,12 @@ function CaseCard({ c, index }: { c: (typeof CASES)[number]; index: number }) {
     >
       <div className="flex items-center justify-between mb-6">
         <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">{c.domain}</span>
-        <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-1 border ${verdictClass(c.verdict)}`}>
+        <span className={`inline-flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-widest px-2 py-1 border ${verdictClass(c.verdict)}`}>
+          <span aria-hidden>{verdictGlyph(c.verdict)}</span>
           {c.verdict}
         </span>
       </div>
-      <h3 className="font-display text-2xl tracking-tight mb-3">{c.action}</h3>
+      <h3 className="warden-display !text-[clamp(1.35rem,1.1rem+0.9vw,1.7rem)] mb-3">{c.action}</h3>
       <p className="text-[15px] text-muted-foreground leading-relaxed mb-5">{c.why}</p>
       <span className="font-mono text-xs text-foreground/40">{c.rule}</span>
     </div>
@@ -108,16 +116,17 @@ export function UseCasesSection() {
     <section id="use-cases" ref={ref} className="relative py-24 lg:py-32">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
         <div className="mb-16 lg:mb-20 max-w-3xl">
-          <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-6">
-            <span className="w-8 h-px bg-foreground/30" />
-            Where you need it
+          <span className="inline-flex items-center gap-2.5 mb-6 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="h-3.5 w-px bg-[var(--color-seal)]" />
+            Coverage
           </span>
           <h2
-            className={`text-3xl lg:text-5xl font-display tracking-tight transition-all duration-700 ${
+            className={`warden-display transition-all duration-700 ${
               visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            One control plane. Every agent, every action.
+            One control plane.{" "}
+            <span className="font-normal text-muted-foreground">Every agent, every action.</span>
           </h2>
           <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
             The same engine governs any domain — the rules are data, not code. Six of the actions an AI agent

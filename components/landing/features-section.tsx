@@ -7,7 +7,9 @@ const REDUCED_MOTION =
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 type Feature = {
-  number: string;
+  // No ordinal: the four checks are a distinguished set, not a sequence.
+  // Literal 01-0N numbering is reserved for How-It-Works (the one true sequence).
+  key: string;
   title: string;
   description: string;
   stats: { value: string; label: string };
@@ -15,28 +17,28 @@ type Feature = {
 
 const features: Feature[] = [
   {
-    number: "01",
+    key: "authority",
     title: "Authority grants",
     description:
       "Who can do what, where, up to how much — resolved up the org hierarchy. No active grant, no action.",
     stats: { value: "deny", label: "no grant" },
   },
   {
-    number: "02",
+    key: "limit",
     title: "Approval limits & escalation",
     description:
       "Within mandate it passes; over it, the action escalates to the nearest authority that covers it.",
     stats: { value: "escalate", label: "over limit" },
   },
   {
-    number: "03",
+    key: "sod",
     title: "Segregation of duties",
     description:
       "An agent can't settle the deal it captured. Conflicting actions on the same resource are denied.",
     stats: { value: "SOD-FBO-01", label: "the Barings wall" },
   },
   {
-    number: "04",
+    key: "ledger",
     title: "Tamper-evident ledger",
     description:
       "Every verdict is hash-chained into an append-only record. Any after-the-fact edit is detectable.",
@@ -174,18 +176,18 @@ export function FeaturesSection() {
         <div className="relative mb-24 lg:mb-32">
           <div className="grid lg:grid-cols-12 gap-8 items-end">
             <div className="lg:col-span-7">
-              <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-6">
-                <span className="w-12 h-px bg-foreground/30" />
-                Capabilities
+              <span className="inline-flex items-center gap-2.5 mb-6 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                <span className="h-3.5 w-px bg-[var(--color-seal)]" />
+                The engine
               </span>
               <h2
-                className={`text-4xl md:text-5xl lg:text-7xl font-display tracking-tight leading-[0.9] transition-all duration-1000 ${
+                className={`warden-display warden-display-xl transition-all duration-1000 ${
                   isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
               >
                 The decision, before the action.
                 <br />
-                <span className="text-muted-foreground">Every time, with a reason.</span>
+                <span className="font-normal text-muted-foreground">Every time, with a reason.</span>
               </h2>
             </div>
             <div className="lg:col-span-5 lg:pb-4">
@@ -213,15 +215,17 @@ export function FeaturesSection() {
             <div className="relative flex-1 p-8 lg:p-12">
               <ParticleVisualization />
               <div className="relative z-10 pointer-events-none">
-                <span className="font-mono text-sm text-muted-foreground">{lead.number}</span>
-                <h3 className="text-3xl lg:text-4xl font-display mt-4 mb-6 group-hover:translate-x-2 transition-transform duration-500">
+                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  Authority
+                </span>
+                <h3 className="warden-display !text-[clamp(1.6rem,1.2rem+1.6vw,2.4rem)] mt-4 mb-6 group-hover:translate-x-2 transition-transform duration-500">
                   {lead.title}
                 </h3>
                 <p className="text-lg text-muted-foreground leading-relaxed max-w-md mb-8">
                   {lead.description}
                 </p>
                 <div>
-                  <span className="text-4xl lg:text-5xl font-display lowercase text-primary">
+                  <span className="font-mono-display text-4xl lg:text-5xl font-bold lowercase text-deny">
                     {lead.stats.value}
                   </span>
                   <span className="block text-sm text-muted-foreground font-mono mt-2">
@@ -258,7 +262,7 @@ export function FeaturesSection() {
                     </div>
                     <div className="mt-3 flex items-center justify-between border-t border-foreground/10 pt-3">
                       <span className="text-muted-foreground">limit</span>
-                      <span>$3,000,000</span>
+                      <span className="font-mono-display">$3,000,000</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">duties</span>
@@ -266,7 +270,7 @@ export function FeaturesSection() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">verdict</span>
-                      <span className="text-primary">deny</span>
+                      <span className="font-semibold text-deny">deny ✕</span>
                     </div>
                   </div>
                 </div>
@@ -277,7 +281,7 @@ export function FeaturesSection() {
 
           {/* Three supporting cards */}
           {supporting.map((feature, i) => (
-            <SupportingCard key={feature.number} feature={feature} index={i} />
+            <SupportingCard key={feature.key} feature={feature} index={i} />
           ))}
         </div>
       </div>
@@ -308,13 +312,21 @@ function SupportingCard({ feature, index }: { feature: Feature; index: number })
       }`}
       style={{ transitionDelay: `${index * 100 + 150}ms` }}
     >
-      <span className="font-mono text-sm text-muted-foreground">{feature.number}</span>
-      <h3 className="text-2xl lg:text-3xl font-display mt-4 mb-4 group-hover:translate-x-2 transition-transform duration-500">
+      <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        {feature.key === "limit" ? "Limit" : feature.key === "sod" ? "Duties" : "Ledger"}
+      </span>
+      <h3 className="warden-display !text-[clamp(1.4rem,1.1rem+1.1vw,1.95rem)] mt-4 mb-4 group-hover:translate-x-2 transition-transform duration-500">
         {feature.title}
       </h3>
       <p className="text-[15px] text-muted-foreground leading-relaxed mb-8">{feature.description}</p>
       <div className="mt-auto">
-        <span className="font-mono text-2xl lg:text-3xl text-primary">{feature.stats.value}</span>
+        <span
+          className={`font-mono-display text-2xl lg:text-3xl font-semibold ${
+            feature.key === "limit" ? "text-escalate" : "text-primary"
+          }`}
+        >
+          {feature.stats.value}
+        </span>
         <span className="block text-xs text-muted-foreground font-mono mt-2">
           {feature.stats.label}
         </span>

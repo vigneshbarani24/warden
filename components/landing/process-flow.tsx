@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { LedgerSpine } from "@/components/ledger/LedgerSpine";
+import { VerdictStamp } from "@/components/ledger/VerdictStamp";
 
 /**
  * The hero centerpiece: an agent walks an ordered business process one step at a
@@ -115,6 +117,10 @@ export function ProcessFlow() {
   const [sealed, setSealed] = useState<Sealed[]>([]);
   const [revoke, setRevoke] = useState(false);
   const [paused, setPaused] = useState(false);
+  // Chain integrity demo state, driven by the Verify / Tamper affordances.
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [breakAt, setBreakAt] = useState<number | null>(null);
   const seqRef = useRef(140);
 
   const domain = DOMAINS[di] ?? DOMAINS[0]!;
@@ -128,6 +134,9 @@ export function ProcessFlow() {
     setSealed((prev) =>
       [{ seq, hash: shortHash(`${domain.name}/${step.label}/${seq}`), verdict: step.verdict, label: step.label }, ...prev].slice(0, 7),
     );
+    // A new block changed the chain — any prior verify/tamper result is stale.
+    setVerified(false);
+    setBreakAt(null);
   }, [phase, di, si, domain, step]);
 
   // Advance the playhead — deliberately slow so each gated step is readable.
@@ -161,19 +170,48 @@ export function ProcessFlow() {
     return () => clearTimeout(t);
   }, [phase, di, si, paused, reduced, domain, step]);
 
-  // Periodic "revoke once → denied in every region" flash on the DSQL slab.
+  // The DSQL slab's "revoke once → denied in every region" flip is no longer an
+  // orphan timer — it fires off the flow's OWN deny verdict, so the cause (a
+  // blocked action) and the effect (every region sees the denial) are the same
+  // beat. Held through the halt, cleared as the flow advances.
   useEffect(() => {
-    if (reduced) return;
-    let off: ReturnType<typeof setTimeout> | undefined;
-    const iv = setInterval(() => {
-      setRevoke(true);
-      off = setTimeout(() => setRevoke(false), 1200);
-    }, 7600);
-    return () => {
-      clearInterval(iv);
-      if (off) clearTimeout(off);
-    };
-  }, [reduced]);
+    const denied = phase === "stamped" && step.verdict === "deny";
+    setRevoke(denied || phase === "halted");
+  }, [phase, step]);
+
+  const verifyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(verifyTimer.current), []);
+
+  // Verify: run the pass of light DOWN the spine, then settle every seal green.
+  // Timing mirrors the console — per-disc stagger (70ms) + tail, snapping under
+  // reduced motion. Re-entrant: a fresh click restarts the pass cleanly.
+  const runVerify = (): void => {
+    clearTimeout(verifyTimer.current);
+    setBreakAt(null);
+    setVerified(false);
+    setVerifying(true);
+    const settle = reduced ? 0 : sealed.length * 70 + 460;
+    verifyTimer.current = setTimeout(() => {
+      setVerifying(false);
+      setVerified(true);
+    }, settle);
+  };
+
+  // Tamper: the named money-shot. Edit one seal and the break bleeds from that
+  // seq DOWN (LedgerSpine reddens breakAtSeq and every older seq below it).
+  // Target a block in the lower half so the chain above stays intact and the
+  // break plus the discs below it go red — the visible "break detected" beat.
+  const runTamper = (): void => {
+    clearTimeout(verifyTimer.current);
+    setVerifying(false);
+    setVerified(false);
+    if (sealed.length === 0) return;
+    const targetIndex = Math.min(sealed.length - 1, Math.floor(sealed.length / 2) + 1);
+    const target = sealed[targetIndex];
+    if (target) setBreakAt(target.seq);
+  };
+
+  const hasChain = sealed.length > 0;
 
   return (
     <div
@@ -261,13 +299,18 @@ export function ProcessFlow() {
           })}
         </div>
 
-        {/* the Warden gate + the note the gate is enforcing */}
-        <div className="mt-3 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex items-center gap-2 self-start rounded-md border border-primary/30 bg-primary/[0.05] px-2.5 py-1">
-            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
-              Warden
-            </span>
-            <span className="font-mono text-[10px] text-muted-foreground">authority · limits · SoD</span>
+        {/* the Warden gate + its stamped verdict + the note the gate is enforcing */}
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="inline-flex items-center gap-2 self-start rounded-md border border-primary/30 bg-primary/[0.05] px-2.5 py-1">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+                Warden
+              </span>
+              <span className="font-mono text-[10px] text-muted-foreground">authority · limits · SoD</span>
+            </div>
+            {phase !== "evaluating" && (
+              <VerdictStamp key={`${di}-${si}`} verdict={step.verdict} className="text-[11px]" />
+            )}
           </div>
           <div className="min-h-[1rem] font-mono text-[11px] text-muted-foreground">
             {phase !== "evaluating" && step.note ? (
@@ -278,27 +321,44 @@ export function ProcessFlow() {
           </div>
         </div>
 
-        {/* the ledger — every verdict sealed */}
+        {/* the sealed ledger chain — the page's ONE bold object. Each cleared
+            verdict drops in as a new wax disc; Verify runs light down the spine,
+            Tamper bleeds one seq + everything below to deny-red. */}
         <div className="mt-4 border-t border-foreground/10 pt-3">
-          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            Sealed to the ledger
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              Sealed to the ledger
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={runVerify}
+                disabled={!hasChain || verifying}
+                className="rounded border border-foreground/20 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-foreground/80 transition-colors hover:border-allow/50 hover:text-allow disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {verifying ? "verifying…" : "verify"}
+              </button>
+              <button
+                type="button"
+                onClick={runTamper}
+                disabled={!hasChain || breakAt != null}
+                className="rounded border border-foreground/20 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-foreground/80 transition-colors hover:border-deny/50 hover:text-deny disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                tamper
+              </button>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {sealed.length === 0 ? (
-              <span className="font-mono text-[11px] text-muted-foreground/60">awaiting first verdict…</span>
-            ) : (
-              sealed.map((b) => (
-                <span
-                  key={b.seq}
-                  className="pf-seal-in inline-flex items-center gap-1.5 rounded border border-foreground/12 bg-card px-2 py-1 font-mono text-[10px]"
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${V[b.verdict].dot}`} />
-                  <span className="text-muted-foreground">{String(b.seq).padStart(4, "0")}</span>
-                  <span className="text-foreground/70">{b.hash}</span>
-                </span>
-              ))
-            )}
-          </div>
+          {sealed.length === 0 ? (
+            <span className="font-mono text-[11px] text-muted-foreground/60">awaiting first verdict…</span>
+          ) : (
+            <LedgerSpine
+              blocks={sealed}
+              verifying={verifying}
+              verified={verified}
+              breakAtSeq={breakAt}
+              compact
+            />
+          )}
         </div>
       </div>
 

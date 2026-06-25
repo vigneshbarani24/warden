@@ -45,41 +45,42 @@ export function IntegrationsSection() {
 
   return (
     <section id="integrations" ref={sectionRef} className="relative overflow-hidden">
-      {/* Header — centered */}
-      <div className="relative z-10 pt-24 lg:pt-32 text-center">
-        <span
-          className={`inline-flex items-center gap-4 text-sm font-mono text-muted-foreground mb-8 transition-all duration-700 justify-center ${
-            isVisible ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <span className="w-12 h-px bg-foreground/20" />
-          Integrations
-          <span className="w-12 h-px bg-foreground/20" />
-        </span>
+      {/* Header — left-aligned, in the shared container spine */}
+      <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12 pt-16 lg:pt-24">
+        <div className="max-w-2xl">
+          <span
+            className={`inline-flex items-center gap-2.5 mb-8 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-all duration-700 ${
+              isVisible ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <span className="h-3.5 w-px bg-[var(--color-seal)]" />
+            Surface
+          </span>
 
-        <h2
-          className={`text-4xl md:text-5xl lg:text-7xl font-display tracking-tight leading-[0.9] transition-all duration-1000 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-          }`}
-        >
-          Any agent,
-          <br />
-          <span className="text-muted-foreground">any framework.</span>
-        </h2>
+          <h2
+            className={`warden-display warden-display-xl transition-all duration-1000 ${
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
+          >
+            Any agent,
+            <br />
+            <span className="font-normal text-muted-foreground">any framework.</span>
+          </h2>
 
-        <p
-          className={`mt-8 text-xl text-muted-foreground leading-relaxed max-w-xl mx-auto transition-all duration-1000 delay-100 ${
-            isVisible ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          Warden is a plain HTTP contract. Any agent calls{" "}
-          <span className="font-mono text-foreground">decide()</span> before it acts — no SDK
-          lock-in, no framework coupling.
-        </p>
+          <p
+            className={`mt-8 text-xl text-muted-foreground leading-relaxed transition-all duration-1000 delay-100 ${
+              isVisible ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            Warden is a plain HTTP contract. Any agent calls{" "}
+            <span className="font-mono text-foreground">decide()</span> before it acts — no SDK
+            lock-in, no framework coupling.
+          </p>
+        </div>
       </div>
 
       {/* Integration grid */}
-      <div className="relative z-10 mt-16 lg:mt-24 max-w-[1400px] mx-auto px-6 lg:px-12">
+      <div className="relative z-10 mt-12 lg:mt-16 max-w-[1400px] mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-16">
           {integrations.map((integration, index) => (
             <div
@@ -147,14 +148,14 @@ export function IntegrationsSection() {
 
         {/* Bottom stats row */}
         <div
-          className={`flex flex-wrap items-center justify-between gap-8 pt-12 border-t border-foreground/10 transition-all duration-1000 delay-500 pb-24 lg:pb-32 ${
+          className={`flex flex-wrap items-center justify-between gap-8 pt-12 border-t border-foreground/10 transition-all duration-1000 delay-500 pb-16 lg:pb-24 ${
             isVisible ? "opacity-100" : "opacity-0"
           }`}
         >
           <div className="flex flex-wrap gap-12">
             {stats.map((stat) => (
               <div key={stat.category} className="flex items-baseline gap-3">
-                <span className="font-mono text-2xl lg:text-3xl font-display text-foreground">
+                <span className="font-mono-display text-2xl lg:text-3xl font-semibold text-foreground">
                   {stat.name}
                 </span>
                 <span className="text-sm text-muted-foreground">{stat.category}</span>

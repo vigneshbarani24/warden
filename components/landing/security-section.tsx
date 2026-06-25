@@ -30,15 +30,9 @@ const securityFeatures = [
 
 const certifications = ["SHA-256", "append-only", "SOX chain of custody", "EU AI Act Art.12"];
 
-// A small sealed spine — seq · hash blocks linked by a hairline. Pure DOM,
-// retinted to the oxblood seal. Deterministic so SSR and client agree.
-const spine = [
-  { seq: "0041", hash: "9f3a2c" },
-  { seq: "0040", hash: "3a17be" },
-  { seq: "0039", hash: "c0d27e" },
-  { seq: "0038", hash: "7be501" },
-  { seq: "0037", hash: "1d4af8" },
-];
+// The head of the sealed chain — the spine itself lives in the hero. Here we
+// reference it in words and one display-scale hash, not a duplicate spine.
+const HEAD_HASH = "9f3a2c4d8e10b7a3";
 
 export function SecuritySection() {
   const [isVisible, setIsVisible] = useState(false);
@@ -68,29 +62,29 @@ export function SecuritySection() {
     <section
       id="security"
       ref={sectionRef}
-      className="relative py-32 lg:py-40 bg-foreground/[0.02] overflow-hidden"
+      className="relative py-20 lg:py-56 bg-foreground/[0.02] overflow-hidden"
     >
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
         {/* Header */}
         <div className="mb-20">
           <span
-            className={`inline-flex items-center gap-4 text-sm font-mono text-muted-foreground mb-8 transition-all duration-700 ${
+            className={`inline-flex items-center gap-2.5 mb-8 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-all duration-700 ${
               isVisible ? "opacity-100" : "opacity-0"
             }`}
           >
-            <span className="w-12 h-px bg-foreground/20" />
-            Security
+            <span className="h-3.5 w-px bg-[var(--color-seal)]" />
+            Tamper-evidence
           </span>
 
           {/* Title — full width */}
           <h2
-            className={`text-4xl md:text-5xl lg:text-7xl font-display tracking-tight leading-[0.9] mb-8 transition-all duration-1000 ${
+            className={`warden-display warden-display-xl mb-8 transition-all duration-1000 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
           >
             Tamper-evident,
             <br />
-            <span className="text-muted-foreground">by construction.</span>
+            <span className="font-normal text-muted-foreground">by construction.</span>
           </h2>
 
           {/* Description — below title */}
@@ -112,43 +106,35 @@ export function SecuritySection() {
 
         {/* Main content */}
         <div className="grid lg:grid-cols-12 gap-6">
-          {/* Large card — the big 0 + the sealed-chain spine */}
+          {/* Large card — the chain in words + one display-scale hash.
+              The sealed spine itself is the hero centerpiece; we don't duplicate it. */}
           <div
-            className={`lg:col-span-7 relative p-8 lg:p-12 border border-foreground/10 bg-card/40 min-h-[400px] overflow-hidden transition-all duration-700 ${
+            className={`lg:col-span-7 relative flex flex-col p-8 lg:p-12 border border-foreground/10 bg-card/40 min-h-[400px] overflow-hidden transition-all duration-700 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
           >
-            {/* The sealed spine, anchored right — structure, not a photo */}
-            <div className="absolute inset-y-0 right-8 lg:right-12 hidden sm:flex flex-col items-center justify-center pointer-events-none">
-              {spine.map((block, index) => (
-                <div key={block.seq} className="flex flex-col items-center">
-                  <span
-                    className={`inline-flex items-center gap-2 rounded border px-2.5 py-1.5 font-mono text-[11px] transition-all duration-500 ${
-                      isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-                    } border-primary/30 bg-primary/[0.05]`}
-                    style={{ transitionDelay: `${index * 90 + 200}ms` }}
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    <span className="text-muted-foreground">{block.seq}</span>
-                    <span className="text-primary">{block.hash}</span>
-                  </span>
-                  {index < spine.length - 1 && (
-                    <span className="h-5 w-px bg-primary/30" />
-                  )}
-                </div>
-              ))}
-            </div>
+            <div className="relative z-10 max-w-xl">
+              <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                Chain of custody
+              </span>
+              <p className="mt-6 text-2xl lg:text-3xl leading-snug text-foreground">
+                Every verdict links to the one before it. Edit any block and its hash no longer
+                matches — the break, and everything below it, shows red on the sealed spine.
+              </p>
 
-            <div className="relative z-10">
-              <span className="font-mono text-sm text-muted-foreground">Chain of custody</span>
-              <div className="mt-8">
-                <span className="text-7xl lg:text-8xl font-display text-foreground">0</span>
-                <span className="block text-muted-foreground mt-2">undetected edits</span>
+              {/* The head of the chain — one display-scale hash, mono, the data IS the type */}
+              <div className="mt-10">
+                <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  seq 0041 · head
+                </span>
+                <span className="mt-2 block font-mono-display text-2xl lg:text-4xl font-medium text-primary [overflow-wrap:anywhere]">
+                  {HEAD_HASH}
+                </span>
               </div>
             </div>
 
             {/* Property chips */}
-            <div className="absolute bottom-8 left-8 right-8 flex flex-wrap gap-2">
+            <div className="mt-auto flex flex-wrap gap-2 pt-12">
               {certifications.map((cert, index) => (
                 <span
                   key={cert}

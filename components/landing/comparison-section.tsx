@@ -58,18 +58,18 @@ export function ComparisonSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative py-24 lg:py-32">
+    <section ref={sectionRef} className="relative py-16 lg:py-24">
       <div className="mx-auto max-w-[1400px] px-6 lg:px-12">
         {/* Header */}
         <div className="mb-14 max-w-3xl">
-          <span className={`mb-8 inline-flex items-center gap-3 font-mono text-sm text-muted-foreground transition-opacity duration-700 ${isVisible ? "opacity-100" : "opacity-0"}`}>
-            <span className="h-px w-12 bg-foreground/30" />
-            Where it sits
+          <span className={`mb-8 inline-flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-opacity duration-700 ${isVisible ? "opacity-100" : "opacity-0"}`}>
+            <span className="h-3.5 w-px bg-[var(--color-seal)]" />
+            The boundary
           </span>
-          <h2 className={`font-display text-4xl leading-[0.95] tracking-tight transition-all duration-1000 md:text-5xl lg:text-6xl ${isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
+          <h2 className={`warden-display transition-all duration-1000 ${isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
             Not a guardrail.
             <br />
-            <span className="text-muted-foreground">Not a gateway.</span>
+            <span className="font-normal text-muted-foreground">Not a gateway.</span>
           </h2>
           <p className={`mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground transition-opacity duration-1000 delay-100 ${isVisible ? "opacity-100" : "opacity-0"}`}>
             Gateways gate tool <span className="text-foreground">access</span>. Guardrails check

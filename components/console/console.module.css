@@ -11,11 +11,13 @@
   --text: #14171a;
   --text-dim: #565d63;
   --text-faint: #8a9196;
-  --ember: #6e1d24;
-  --ember-bright: #8b2630;
-  --allow: #1f7a4d;
-  --deny: #b0271f;
-  --escalate: #b5790a;
+  /* Source the semantic palette from globals.css so a single token change
+     propagates to both the console and the landing. Values are unchanged. */
+  --ember: var(--color-seal);
+  --ember-bright: var(--color-sealbright);
+  --allow: var(--color-allow);
+  --deny: var(--color-deny);
+  --escalate: var(--color-escalate);
   position: relative;
   display: grid;
   grid-template-rows: auto 1fr;
@@ -82,14 +84,32 @@
   text-transform: uppercase;
   color: var(--text-dim);
 }
-.classified {
+/* ---- Slim topbar KPI readout (replaces the 4-up Operations stat band) ---- */
+.topReadout {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 auto 0 28px;
   font-family: var(--font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.2em;
-  color: var(--ember);
-  border: 1px solid rgba(110, 29, 36, 0.4);
-  border-radius: 3px;
-  padding: 3px 7px;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+.readoutItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.readoutNum {
+  font-weight: 700;
+  color: var(--text);
+}
+.readoutSep {
+  width: 1px;
+  height: 13px;
+  background: var(--line);
 }
 .clusterStatus {
   display: flex;
@@ -108,43 +128,6 @@
   background: var(--allow);
   box-shadow: 0 0 9px var(--allow);
   animation: livePulse 2.6s infinite;
-}
-
-/* ---- Stats band ---- */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: var(--line);
-  border-bottom: 1px solid var(--line);
-  position: relative;
-  z-index: 4;
-}
-.stat {
-  background: rgba(244, 246, 245, 0.85);
-  padding: 14px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.statLabel {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-.statValue {
-  font-family: var(--font-mono);
-  font-size: 27px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.01em;
-}
-.statSub {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-dim);
 }
 
 /* ---- Panes ---- */
@@ -202,6 +185,10 @@
 }
 .row:hover {
   background: rgba(20, 23, 26, 0.025);
+}
+.row:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: -2px;
 }
 .rowSelected {
   background: rgba(110, 29, 36, 0.06);
@@ -304,37 +291,17 @@
   max-width: 780px;
   animation: flipIn 420ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-.stamp {
-  position: relative;
+/* Hero verdict block: the debossed MONO wax stamp (VerdictStamp) + sealed timestamp.
+   The stamp treatment itself lives in globals.css (.warden-stamp); here we only
+   size it and lay the sealed-at subline beneath it. */
+.stampBlock {
   display: inline-flex;
   flex-direction: column;
-  gap: 9px;
-  padding: 22px 32px;
-  border: 1px solid currentColor;
-  border-radius: 9px;
-  overflow: hidden;
-  background:
-    radial-gradient(130% 150% at 0% 0%, color-mix(in srgb, currentColor 16%, transparent), transparent 60%),
-    var(--bg-elev);
-  box-shadow:
-    0 0 50px color-mix(in srgb, currentColor 20%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, currentColor 10%, transparent);
+  align-items: flex-start;
+  gap: 14px;
 }
-.stamp::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(180deg, transparent 0 3px, rgba(20, 23, 26, 0.05) 3px 4px);
-  pointer-events: none;
-}
-.stampVerdict {
-  font-family: var(--font-mono);
-  font-size: 44px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 0.9;
-  text-transform: uppercase;
-  text-shadow: 0 0 28px color-mix(in srgb, currentColor 55%, transparent);
+.heroStamp {
+  font-size: 30px;
 }
 .stampSub {
   font-family: var(--font-mono);
@@ -786,7 +753,7 @@
 /* Operations view fills the main area; panes scroll internally */
 .opsView {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 1fr;
   min-height: 0;
   height: 100%;
 }
@@ -1085,6 +1052,10 @@
   background: rgba(20, 23, 26, 0.03);
   color: var(--text);
 }
+.navItem:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
 .navItemActive {
   background: rgba(110, 29, 36, 0.1);
   border-color: rgba(110, 29, 36, 0.3);
@@ -1207,8 +1178,8 @@
   .navFoot {
     display: none;
   }
-  .stats {
-    grid-template-columns: repeat(2, 1fr);
+  .topReadout {
+    display: none;
   }
   .panes {
     grid-template-columns: 1fr;

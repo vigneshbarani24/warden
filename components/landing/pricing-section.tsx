@@ -79,26 +79,26 @@ export function PricingSection() {
   }, []);
 
   return (
-    <section id="pricing" ref={sectionRef} className="relative py-32 lg:py-40">
+    <section id="pricing" ref={sectionRef} className="relative py-24 lg:py-32">
       <div className="mx-auto max-w-[1400px] px-6 lg:px-12">
         {/* Header — dramatic offset */}
         <div className="mb-20 grid gap-8 lg:grid-cols-12">
           <div className="lg:col-span-7">
-            <span className="mb-3 inline-flex items-center gap-3 font-mono text-sm text-muted-foreground">
-              <span className="h-px w-12 bg-foreground/30" />
-              Pricing
+            <span className="mb-3 inline-flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              <span className="h-3.5 w-px bg-[var(--color-seal)]" />
+              Metering
             </span>
             <p className="mb-8 font-mono text-xs text-muted-foreground/80">
               Proposed model — illustrative; no shipped product runs this exact hybrid today.
             </p>
             <h2
-              className={`font-display text-4xl leading-[0.9] tracking-tight transition-all duration-1000 md:text-5xl lg:text-7xl ${
+              className={`warden-display warden-display-xl transition-all duration-1000 ${
                 isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
               }`}
             >
               Pay per
               <br />
-              <span className="text-stroke">decision governed.</span>
+              <span className="font-normal text-muted-foreground">decision governed.</span>
             </h2>
           </div>
 
@@ -180,12 +180,14 @@ export function PricingSection() {
                 )}
 
                 <div className="p-8 lg:p-10">
-                  {/* Plan header */}
+                  {/* Plan header (no ordinal — numbering is reserved for the How-It-Works sequence) */}
                   <div className="mb-8 border-b border-foreground/10 pb-8">
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {String(index + 1).padStart(2, "0")}
+                    <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                      Tier
                     </span>
-                    <h3 className="mt-2 font-display text-2xl lg:text-3xl">{plan.name}</h3>
+                    <h3 className="warden-display !text-[clamp(1.5rem,1.2rem+1.2vw,2.1rem)] mt-2">
+                      {plan.name}
+                    </h3>
                     <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
                   </div>
 
@@ -193,13 +195,13 @@ export function PricingSection() {
                   <div className="mb-8">
                     {plan.price.monthly !== null ? (
                       <div className="flex items-baseline gap-2">
-                        <span className="font-display text-5xl lg:text-6xl">
+                        <span className="font-mono-display text-5xl lg:text-6xl font-semibold">
                           ${isAnnual ? plan.price.annual : plan.price.monthly}
                         </span>
                         <span className="text-sm text-muted-foreground">/month</span>
                       </div>
                     ) : (
-                      <span className="font-display text-4xl">Custom</span>
+                      <span className="font-mono-display text-4xl font-semibold">Custom</span>
                     )}
                     {plan.price.monthly !== null && plan.price.monthly > 0 && (
                       <p className="mt-2 font-mono text-xs text-muted-foreground">
@@ -263,13 +265,6 @@ export function PricingSection() {
           </a>
         </div>
       </div>
-
-      <style jsx>{`
-        .text-stroke {
-          -webkit-text-stroke: 1.5px currentColor;
-          -webkit-text-fill-color: transparent;
-        }
-      `}</style>
     </section>
   );
 }

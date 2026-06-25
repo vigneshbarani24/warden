@@ -4,6 +4,8 @@ import { useCallback, useRef, useState } from "react";
 import { api } from "@/lib/api-client";
 import type { LedgerView } from "@/lib/pdp";
 import type { VerifyResult } from "@/lib/ledger";
+import { LedgerSpine } from "@/components/ledger/LedgerSpine";
+import { VerdictStamp } from "@/components/ledger/VerdictStamp";
 
 /**
  * The guided simulation — the explainable front door of the console.
@@ -59,9 +61,7 @@ interface Snapshot {
 }
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-const short = (h: string): string => h.slice(0, 10);
 
-const verdictText: Record<Verdict, string> = { allow: "text-allow", deny: "text-deny", escalate: "text-escalate" };
 const verdictBorder: Record<Verdict, string> = { allow: "border-allow/40", deny: "border-deny/40", escalate: "border-escalate/40" };
 
 async function fetchLedger(): Promise<LedgerView[]> {
@@ -79,6 +79,12 @@ export function SimulationView() {
   const [running, setRunning] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [stepIdx, setStepIdx] = useState(-1);
+  // Cold-start: resolving authority from DSQL before any snapshot exists. Distinct
+  // from the genuine empty state ("press Play"), which means no demo has run yet.
+  const [loading, setLoading] = useState(false);
+  // Live verify pass: drives the light travelling down the spine, locking each
+  // disc green. Turned on while the verify step runs, off once the pass settles.
+  const [verifying, setVerifying] = useState(false);
   const [caption, setCaption] = useState(
     "Press Play to run the governed-agent demo end to end — or Next to step through it while you narrate. Then drag the scrubber to time-travel.",
   );
@@ -113,11 +119,16 @@ export function SimulationView() {
   // The scenario must always begin from a clean, consistent DB: empty ledger,
   // gas mandate un-revoked. Called before step 0 by both Play and Next.
   const startFresh = useCallback(async () => {
-    await api.reset();
-    sodResource.current = `DEMO-SOD-${Math.floor(1000 + Math.random() * 9000)}`;
-    setTimeline([]);
-    setCursor(0);
-    setFollowing(true);
+    setLoading(true);
+    try {
+      await api.reset();
+      sodResource.current = `DEMO-SOD-${Math.floor(1000 + Math.random() * 9000)}`;
+      setTimeline([]);
+      setCursor(0);
+      setFollowing(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const steps: Step[] = [
@@ -217,6 +228,13 @@ export function SimulationView() {
             { kind: step.kind, title: step.title, caption: step.caption, decision: lastDecision, marker: out.marker ?? null, ledger: out.ledger, verify: out.verify ?? null },
           ];
         });
+        // The Verify step runs the sanctioned pass: light travels down the spine
+        // locking each disc. LedgerSpine settles to verified/broken from the snapshot.
+        if (step.kind === "verify") {
+          setVerifying(true);
+          const sealed = out.ledger.length;
+          setTimeout(() => setVerifying(false), sealed * 70 + 460);
+        }
       } catch (e) {
         // Stop the Play loop cleanly and tell the operator — never freeze mid-demo with stale narration.
         playingRef.current = false;
@@ -286,7 +304,9 @@ export function SimulationView() {
   const resetAll = useCallback(async () => {
     playingRef.current = false;
     setPlaying(false);
+    setVerifying(false);
     setRunning(true);
+    setLoading(true);
     try {
       await api.reset();
       sodResource.current = `DEMO-SOD-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -299,6 +319,7 @@ export function SimulationView() {
       setCaption(`Reset failed: ${e instanceof Error ? e.message : "unknown error"}. Showing the previous run — try Reset again.`);
     } finally {
       setRunning(false);
+      setLoading(false);
     }
   }, []);
 
@@ -328,6 +349,7 @@ export function SimulationView() {
 
   const onScrub = (v: number) => {
     setFollowing(false);
+    setVerifying(false);
     setCursor(v);
   };
 
@@ -384,17 +406,23 @@ export function SimulationView() {
               {view && !follow ? view.caption || caption : caption}
             </p>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <button onClick={play} disabled={running && !playing} className="rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50">
+          {/* Console control set: Play = oxblood primary, the rest quiet outlines.
+              Mono caps, squared — the institutional console vocabulary, not SaaS pills. */}
+          <div className="flex shrink-0 flex-wrap items-center gap-2 font-mono text-[11.5px] uppercase tracking-[0.07em]">
+            <button
+              onClick={play}
+              disabled={running && !playing}
+              className="rounded-md border border-primary bg-primary px-5 py-2.5 font-semibold text-[#f6efe9] shadow-[0_0_22px_rgba(110,29,36,0.35)] transition-colors hover:bg-[var(--color-sealbright)] hover:border-[var(--color-sealbright)] disabled:opacity-40"
+            >
               {playing ? "Pause" : "Play"}
             </button>
-            <button onClick={next} disabled={running || playing} className="rounded-full border border-foreground/25 px-4 py-2 text-sm transition-colors hover:bg-foreground/5 disabled:opacity-40">
+            <button onClick={next} disabled={running || playing} className="rounded-md border border-border bg-card/60 px-4 py-2.5 text-foreground transition-colors hover:bg-card disabled:opacity-40">
               Next
             </button>
-            <button onClick={resetAll} disabled={running} className="rounded-full border border-foreground/25 px-4 py-2 text-sm transition-colors hover:bg-foreground/5 disabled:opacity-40">
+            <button onClick={resetAll} disabled={running} className="rounded-md border border-border bg-card/60 px-4 py-2.5 text-foreground transition-colors hover:bg-card disabled:opacity-40">
               Reset
             </button>
-            <button onClick={runFleet} disabled={running || playing} className="rounded-full border border-primary/40 px-4 py-2 text-sm text-primary transition-colors hover:bg-primary/[0.06] disabled:opacity-40">
+            <button onClick={runFleet} disabled={running || playing} className="rounded-md border border-border bg-card/60 px-4 py-2.5 text-foreground transition-colors hover:bg-card disabled:opacity-40">
               Run live fleet
             </button>
           </div>
@@ -453,14 +481,18 @@ export function SimulationView() {
             {view?.marker && <span className="font-mono text-[11px] text-primary">{view.marker}</span>}
           </div>
           {decision ? (
-            <div className={`rounded-lg border ${verdictBorder[decision.verdict]} bg-background/40 p-5`}>
-              <div className={`font-display text-4xl tracking-tight ${verdictText[decision.verdict]}`}>{decision.verdict.toUpperCase()}</div>
-              <div className="mt-2 font-mono text-[13px] text-foreground/80">{decision.agent} · {decision.actionType}</div>
+            // key on the request so the stamp re-mounts and re-stamps on a fresh decision —
+            // the allow->deny flip after a revoke is the sanctioned verdict motion.
+            <div key={`${decision.resource}-${decision.verdict}`} className={`rounded-lg border ${verdictBorder[decision.verdict]} bg-background/40 p-5`}>
+              {/* Verdict is the debossed MONO wax stamp — never the serif. Dual-encoded. */}
+              <VerdictStamp verdict={decision.verdict} className="text-[22px]" />
+              <div className="mt-4 font-mono text-[13px] text-foreground/80">{decision.agent} · {decision.actionType}</div>
               <div className="font-mono text-[13px] text-muted-foreground">{decision.resource} · {money.format(decision.amount)}</div>
               <p className="mt-4 border-l-2 border-primary/40 pl-3 text-[14px] leading-relaxed text-foreground/90">{decision.reason}</p>
               <div className="mt-5 space-y-2">
                 {checks.map((c) => (
                   <div key={c.label} className="flex items-center gap-3 font-mono text-[12px]">
+                    {/* Dual-encode: glyph + semantic color + the state word, never hue alone. */}
                     <span
                       className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] ${
                         c.state === "pass"
@@ -469,14 +501,39 @@ export function SimulationView() {
                             ? "bg-deny/15 text-deny"
                             : "bg-foreground/10 text-muted-foreground"
                       }`}
+                      aria-hidden="true"
                     >
                       {c.state === "pass" ? "✓" : c.state === "fail" ? "✕" : "·"}
                     </span>
                     <span className="w-20 text-foreground/80">{c.label}</span>
+                    <span
+                      className={`w-10 uppercase tracking-[0.08em] ${
+                        c.state === "pass" ? "text-allow" : c.state === "fail" ? "text-deny" : "text-muted-foreground"
+                      }`}
+                    >
+                      {c.state === "pass" ? "pass" : c.state === "fail" ? "fail" : "n/a"}
+                    </span>
                     <span className="text-muted-foreground">{c.detail}</span>
                   </div>
                 ))}
               </div>
+            </div>
+          ) : loading ? (
+            // Cold-start: authority is being resolved from DSQL. Skeleton spine of
+            // outline-only discs — distinct from the genuine empty/ready state below.
+            <div className="flex h-48 flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-foreground/15 text-center">
+              <div className="flex flex-col items-center gap-2.5">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="h-6 w-6 rounded-full border border-primary/40 bg-primary/[0.04]"
+                    style={{ opacity: 0.4 + i * 0.2 }}
+                  />
+                ))}
+              </div>
+              <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                Resolving authority from Aurora DSQL…
+              </span>
             </div>
           ) : (
             <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-foreground/15 text-center text-sm text-muted-foreground">
@@ -485,30 +542,23 @@ export function SimulationView() {
           )}
         </div>
 
-        {/* Ledger chain at this point in time */}
+        {/* Ledger chain — the signature. The sealed wax spine; LedgerSpine drives
+            the verify pass-down + break states and renders its own status line. */}
         <div className="flex min-h-0 flex-col rounded-lg border border-foreground/12 bg-card/40 p-5 lg:p-6">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4">
             <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Ledger chain</span>
-            {verify ? (
-              <span className={`font-mono text-[11px] ${verify.ok ? "text-allow" : "text-deny"}`}>{verify.ok ? "● intact" : `● break at ${String(breakAt).padStart(4, "0")}`}</span>
-            ) : (
-              <span className="font-mono text-[11px] text-muted-foreground/60">{ledger.length} sealed</span>
-            )}
           </div>
-          <div className="flex-1 space-y-1.5 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto">
             {orderedLedger.length === 0 ? (
               <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">empty</div>
             ) : (
-              orderedLedger.map((row) => {
-                const broken = breakAt != null && row.seq >= breakAt;
-                return (
-                  <div key={row.seq} className={`flex items-center gap-3 rounded border px-3 py-2 font-mono text-[11px] transition-colors ${broken ? "border-deny/40 bg-deny/[0.05]" : "border-foreground/10 bg-background/30"}`}>
-                    <span className={`h-2 w-2 rounded-full ${broken ? "bg-deny" : verify?.ok ? "bg-allow" : "bg-primary/60"}`} />
-                    <span className="text-muted-foreground">{String(row.seq).padStart(4, "0")}</span>
-                    <span className="truncate text-foreground/70">{short(row.hash)}</span>
-                  </div>
-                );
-              })
+              <LedgerSpine
+                blocks={orderedLedger}
+                breakAtSeq={breakAt}
+                verifying={verifying}
+                verified={verify?.ok ?? false}
+                compact
+              />
             )}
           </div>
         </div>

@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { ProcessFlow } from "./process-flow";
 
-const words = ["allowed", "denied", "escalated", "sealed"];
-
-const stats = [
-  { value: "$2.0M", label: "blocked on a revoked grant" },
-  { value: "instant", label: "cross-region revocation" },
-  { value: "0", label: "stale approvals" },
+// Each cycled word carries its own semantic color (allow/deny/escalate), with
+// "sealed" landing on oxblood — the authority accent. Color is dual-encoded by
+// the word itself, never hue alone.
+const words: { text: string; color: string }[] = [
+  { text: "allowed", color: "var(--color-allow)" },
+  { text: "denied", color: "var(--color-deny)" },
+  { text: "escalated", color: "var(--color-escalate)" },
+  { text: "sealed", color: "var(--color-seal)" },
 ];
 
 export function HeroSection() {
@@ -32,23 +34,18 @@ export function HeroSection() {
 
   return (
     <section className="relative flex min-h-screen flex-col justify-center overflow-hidden pt-28 pb-16 lg:pt-32">
-      {/* Subtle grid lines */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-[0.06]">
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={`h-${i}`}
-            className="absolute h-px bg-foreground"
-            style={{ top: `${12.5 * (i + 1)}%`, left: 0, right: 0 }}
-          />
-        ))}
-        {[...Array(12)].map((_, i) => (
-          <div
-            key={`v-${i}`}
-            className="absolute w-px bg-foreground"
-            style={{ left: `${8.33 * (i + 1)}%`, top: 0, bottom: 0 }}
-          />
-        ))}
-      </div>
+      {/* Quiet cross-fade for the rotating verdict word (replaces the per-char
+          blur(40px) loop). Reduced motion snaps to the resolved word. */}
+      <style>{`
+        .hero-word { animation: hero-word-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+        @keyframes hero-word-in {
+          from { opacity: 0; transform: translateY(0.12em); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .hero-word { animation: none; opacity: 1; transform: none; }
+        }
+      `}</style>
 
       <div className="relative z-10 mx-auto w-full max-w-[1400px] px-6 lg:px-12">
         <div className="grid items-center gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:gap-16">
@@ -66,26 +63,27 @@ export function HeroSection() {
             </div>
 
             <h1
-              className={`font-display text-[clamp(2.25rem,5.4vw,4.5rem)] leading-[0.98] tracking-tight transition-all duration-1000 ${
+              className={`warden-display transition-all duration-1000 ${
                 isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
               }`}
             >
-              <span className="block">Every action an agent takes,</span>
-              <span className="block">
+              <span className="block font-semibold">Every action an agent takes,</span>
+              <span className="block font-normal text-muted-foreground">
                 instantly{" "}
-                <span className="relative inline-block text-primary">
-                  <span key={wordIndex} className="inline-flex">
-                    {word.split("").map((char, i) => (
-                      <span
-                        key={`${wordIndex}-${i}`}
-                        className="inline-block animate-char-in"
-                        style={{ animationDelay: `${i * 45}ms` }}
-                      >
-                        {char}
-                      </span>
-                    ))}
+                <span className="relative inline-block font-semibold">
+                  {/* quiet cross-fade between verdict words; semantic color per word,
+                      dual-encoded by the word itself. No per-char blur loop. */}
+                  <span
+                    key={wordIndex}
+                    className="hero-word inline-block"
+                    style={{ color: word.color }}
+                  >
+                    {word.text}
                   </span>
-                  <span className="absolute -bottom-1 left-0 right-0 h-2.5 bg-primary/12" />
+                  <span
+                    className="absolute -bottom-1 left-0 right-0 h-2.5 opacity-15 transition-colors duration-500"
+                    style={{ backgroundColor: word.color }}
+                  />
                 </span>
               </span>
             </h1>
@@ -125,17 +123,21 @@ export function HeroSection() {
               </Button>
             </div>
 
+            {/* The honest stats, demoted to a single mono line. The amount is data,
+                so it's JetBrains Mono (.font-mono-display), not the marketing serif. */}
             <div
-              className={`mt-10 flex flex-wrap gap-x-10 gap-y-4 border-t border-foreground/10 pt-7 transition-all duration-700 delay-500 ${
+              className={`mt-9 flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t border-foreground/10 pt-6 font-mono text-xs text-muted-foreground transition-all duration-700 delay-500 ${
                 isVisible ? "opacity-100" : "opacity-0"
               }`}
             >
-              {stats.map((s) => (
-                <div key={s.label} className="flex flex-col gap-1">
-                  <span className="font-display text-2xl lg:text-3xl">{s.value}</span>
-                  <span className="max-w-[10rem] text-xs leading-tight text-muted-foreground">{s.label}</span>
-                </div>
-              ))}
+              <span className="font-mono-display text-foreground">$2.0M</span>
+              <span>blocked on a revoked grant</span>
+              <span className="text-muted-foreground/40">·</span>
+              <span className="text-foreground">instant</span>
+              <span>cross-region revocation</span>
+              <span className="text-muted-foreground/40">·</span>
+              <span className="text-foreground">0</span>
+              <span>stale approvals</span>
             </div>
           </div>
 

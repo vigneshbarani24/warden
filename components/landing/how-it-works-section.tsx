@@ -82,20 +82,20 @@ export function HowItWorksSection() {
                 isVisible ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"
               }`}
             >
-              <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-8">
-                <span className="w-12 h-px bg-foreground/20" />
-                Process
+              <span className="inline-flex items-center gap-2.5 mb-8 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                <span className="h-3.5 w-px bg-[var(--color-seal)]" />
+                The sequence
               </span>
             </div>
 
             <h2
-              className={`text-4xl md:text-5xl lg:text-7xl font-display tracking-tight leading-[0.9] transition-all duration-1000 delay-100 ${
+              className={`warden-display warden-display-xl transition-all duration-1000 delay-100 ${
                 isVisible ? "translate-y-0 opacity-100" : "translate-y-16 opacity-0"
               }`}
             >
               <span className="block">Resolve.</span>
-              <span className="block text-foreground/40">Check.</span>
-              <span className="block text-foreground/15">Seal.</span>
+              <span className="block font-normal text-foreground/40">Check.</span>
+              <span className="block font-normal text-foreground/15">Seal.</span>
             </h2>
           </div>
 
@@ -137,7 +137,7 @@ export function HowItWorksSection() {
               {/* Step number with animated progress line */}
               <div className="flex items-center gap-4 mb-7">
                 <span
-                  className={`text-3xl lg:text-4xl font-display transition-colors duration-300 ${
+                  className={`font-mono-display text-3xl lg:text-4xl font-bold transition-colors duration-300 ${
                     activeStep === index ? "text-primary" : "text-foreground/20"
                   }`}
                 >
@@ -151,10 +151,10 @@ export function HowItWorksSection() {
               </div>
 
               {/* Title */}
-              <h3 className="text-2xl lg:text-3xl font-display mb-1 leading-tight">{step.title}</h3>
-              <span className="text-lg text-muted-foreground font-display block mb-5">
-                {step.subtitle}
-              </span>
+              <h3 className="warden-display !text-[clamp(1.4rem,1.1rem+1vw,1.85rem)] mb-1 leading-tight">
+                {step.title}
+              </h3>
+              <span className="block mb-5 text-lg text-muted-foreground">{step.subtitle}</span>
 
               {/* Description */}
               <p

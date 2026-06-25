@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DecisionRow, GrantView, LedgerView } from "@/lib/pdp";
 import type { VerifyResult } from "@/lib/ledger";
 import { api } from "@/lib/api-client";
+import { LedgerSpine } from "@/components/ledger/LedgerSpine";
+import { VerdictStamp, type Verdict } from "@/components/ledger/VerdictStamp";
 import styles from "./console.module.css";
 import { ProcessFlowsView } from "./ProcessFlowsView";
 import { ActivityView } from "./ActivityView";
@@ -34,6 +36,9 @@ interface DecisionCtx {
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const shortHash = (h: string): string => h.slice(0, 10);
 const verdictClass = (v: string): string => styles[v] ?? "";
+// Dual-encode every verdict: glyph alongside color + word, never hue alone.
+const VERDICT_GLYPH: Record<string, string> = { allow: "✓", deny: "✕", escalate: "▲" };
+const verdictGlyph = (v: string): string => VERDICT_GLYPH[v] ?? "·";
 
 export function Console() {
   const [view, setView] = useState<ViewKey>("simulation");
@@ -163,12 +168,6 @@ export function Console() {
     }
   }, [refresh]);
 
-  const sealState = (seq: number): string => {
-    if (!verifyResult) return "";
-    if (verifyResult.ok) return styles.sealVerified ?? "";
-    return seq >= verifyResult.breakAtSeq ? styles.sealBroken ?? "" : styles.sealVerified ?? "";
-  };
-
   return (
     <div className={styles.shell}>
       <header className={styles.topbar}>
@@ -177,7 +176,26 @@ export function Console() {
           <span className={styles.wordmark}>WARDEN</span>
           <span className={styles.divider} />
           <span className={styles.subtitle}>Decision Command</span>
-          <span className={styles.classified}>CLASSIFIED</span>
+        </div>
+        {/* Slim mono readout: the four KPIs demoted off the Operations band into a
+            single topbar line, returning that vertical space to the verdict + chain. */}
+        <div className={styles.topReadout}>
+          <span className={styles.readoutItem}>
+            <span className={styles.readoutNum}>{activeGrants}</span> grants in force
+          </span>
+          <span className={styles.readoutSep} />
+          <span className={styles.readoutItem}>
+            <span className={styles.readoutNum}>{decisions.length}</span> decisions
+          </span>
+          <span className={styles.readoutSep} />
+          <span className={styles.readoutItem}>
+            <span className={styles.readoutNum}>{ledger.length}</span> sealed
+          </span>
+          <span className={styles.readoutSep} />
+          <span className={`${styles.readoutItem} ${chain.cls}`}>
+            <span className={styles.statusDot} style={{ background: chain.dot, boxShadow: `0 0 9px ${chain.dot}` }} />
+            chain {chain.word.toLowerCase()}
+          </span>
         </div>
         <div className={styles.clusterStatus}>
           <span className={styles.liveDot} />
@@ -212,29 +230,6 @@ export function Console() {
 
           {view === "operations" && (
             <div className={styles.opsView}>
-              <div className={styles.stats}>
-                <div className={styles.stat}>
-                  <span className={styles.statLabel}>Active Grants</span>
-                  <span className={styles.statValue}>{activeGrants}</span>
-                  <span className={styles.statSub}>authority in force</span>
-                </div>
-                <div className={styles.stat}>
-                  <span className={styles.statLabel}>Decisions</span>
-                  <span className={styles.statValue}>{decisions.length}</span>
-                  <span className={styles.statSub}>this session</span>
-                </div>
-                <div className={styles.stat}>
-                  <span className={styles.statLabel}>Sealed Blocks</span>
-                  <span className={styles.statValue}>{ledger.length}</span>
-                  <span className={styles.statSub}>hash-chained</span>
-                </div>
-                <div className={styles.stat}>
-                  <span className={styles.statLabel}>Chain</span>
-                  <span className={`${styles.statValue} ${chain.cls}`}>{chain.word}</span>
-                  <span className={styles.statSub}>tamper-evident</span>
-                </div>
-              </div>
-
               <div className={styles.panes}>
                 {/* REQUEST FEED */}
                 <section className={`${styles.pane} ${styles.feed}`}>
@@ -269,7 +264,9 @@ export function Console() {
                           </div>
                           <div className={styles.rowRight}>
                             <span className={styles.amount}>{money.format(d.amount)}</span>
-                            <span className={styles.badge}>{d.verdict}</span>
+                            <span className={styles.badge}>
+                              <span aria-hidden="true">{verdictGlyph(d.verdict)}</span> {d.verdict}
+                            </span>
                           </div>
                         </div>
                       );
@@ -283,8 +280,9 @@ export function Console() {
                     <div className={styles.placeholder}>Select a decision to inspect</div>
                   ) : (
                     <div className={styles.inspectorInner} key={selected.requestId}>
-                      <div className={`${styles.stamp} ${verdictClass(selected.verdict)}`}>
-                        <span className={styles.stampVerdict}>{selected.verdict}</span>
+                      {/* Hero verdict: the debossed MONO wax stamp (dual-encoded), not serif. */}
+                      <div className={styles.stampBlock}>
+                        <VerdictStamp verdict={selected.verdict as Verdict} className={styles.heroStamp} />
                         <span className={styles.stampSub}>
                           sealed · {new Date(selected.createdAt).toISOString().replace("T", " ").slice(0, 19)} UTC
                         </span>
@@ -477,20 +475,14 @@ export function Console() {
                     {orderedLedger.length === 0 ? (
                       <div className={styles.empty}>The ledger is empty.</div>
                     ) : (
-                      orderedLedger.map((b, i) => (
-                        <div key={b.seq} className={styles.block}>
-                          <div
-                            className={`${styles.seal} ${sealState(b.seq)} ${verifying ? styles.locking : ""}`}
-                            style={verifying ? { animationDelay: `${i * 70}ms` } : undefined}
-                          >
-                            {String(b.seq).padStart(4, "0")}
-                          </div>
-                          <div className={styles.blockMeta}>
-                            <span className={styles.blockSeq}>seq {String(b.seq).padStart(4, "0")}</span>
-                            <span className={styles.blockHash}>{shortHash(b.hash)}</span>
-                          </div>
-                        </div>
-                      ))
+                      // The signature sealed spine. Verify runs the pass-down lock-green;
+                      // a break tints from the seq down red. LedgerSpine owns both motions.
+                      <LedgerSpine
+                        blocks={orderedLedger}
+                        breakAtSeq={verifyResult && !verifyResult.ok ? verifyResult.breakAtSeq : null}
+                        verifying={verifying}
+                        verified={verifyResult?.ok ?? false}
+                      />
                     )}
                   </div>
                 </section>

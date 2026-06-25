@@ -85,12 +85,12 @@ export function ArchitectureSection() {
     <section id="stack" ref={ref} className="relative py-24 lg:py-32">
       <div className="mx-auto max-w-[1400px] px-6 lg:px-12">
         <div className="mb-14 max-w-3xl lg:mb-16">
-          <span className="mb-6 inline-flex items-center gap-3 font-mono text-sm text-muted-foreground">
-            <span className="h-px w-8 bg-foreground/30" />
-            Architecture
+          <span className="mb-6 inline-flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="h-3.5 w-px bg-[var(--color-seal)]" />
+            The stack
           </span>
           <h2
-            className={`font-display text-4xl tracking-tight transition-all duration-700 lg:text-6xl ${
+            className={`warden-display transition-all duration-700 ${
               visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
             }`}
           >
