@@ -62,7 +62,7 @@ export async function POST() {
       action: { actor: action.actor, actionType: action.actionType, resource: action.resource, amount: action.amount },
       regionA: {
         region: REGION_A_LABEL,
-        endpoint: process.env.DSQL_ENDPOINT,
+        endpoint: process.env.DSQL_ENDPOINT?.trim(),
         verdict: a.verdict,
         reason: a.reason,
         requestId: a.requestId,
@@ -70,7 +70,7 @@ export async function POST() {
       revoke: { grantId: revoke.id, revokedAt: revoke.revokedAt },
       regionB: {
         region: REGION_B_LABEL,
-        endpoint: process.env.DSQL_ENDPOINT_B,
+        endpoint: process.env.DSQL_ENDPOINT_B?.trim(),
         verdict: b.verdict,
         reason: b.reason,
         requestId: b.requestId,
