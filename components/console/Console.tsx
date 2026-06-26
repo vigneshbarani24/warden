@@ -11,11 +11,13 @@ import { ProcessFlowsView } from "./ProcessFlowsView";
 import { ActivityView } from "./ActivityView";
 import { ControlsView } from "./ControlsView";
 import { SimulationView } from "./SimulationView";
+import { CrossRegionView } from "./CrossRegionView";
 
-type ViewKey = "simulation" | "operations" | "flows" | "controls" | "activity";
+type ViewKey = "simulation" | "crossregion" | "operations" | "flows" | "controls" | "activity";
 
 const NAV: Array<{ key: ViewKey; label: string }> = [
   { key: "simulation", label: "Simulation" },
+  { key: "crossregion", label: "Cross-region" },
   { key: "operations", label: "Operations" },
   { key: "flows", label: "Process Flows" },
   { key: "controls", label: "Controls" },
@@ -224,6 +226,7 @@ export function Console() {
 
         <main className={styles.main}>
           {view === "simulation" && <SimulationView />}
+          {view === "crossregion" && <CrossRegionView />}
           {view === "flows" && <ProcessFlowsView decisions={decisions} />}
           {view === "controls" && <ControlsView grants={allGrants} />}
           {view === "activity" && <ActivityView decisions={decisions} onRun={handleRunFleet} running={busy} />}

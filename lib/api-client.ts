@@ -4,7 +4,7 @@
  */
 import type { DecisionRow, LedgerView, GrantView, DecideOutput, PolicyRuleView } from "./pdp";
 import type { VerifyResult } from "./ledger";
-import type { DecisionInput } from "./types";
+import type { DecisionInput, CrossRegionResult } from "./types";
 
 async function unwrap<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
@@ -32,4 +32,5 @@ export const api = {
   tamper: () => post("/api/demo/tamper").then((r) => unwrap<{ seq: number }>(r)),
   reset: () => post("/api/demo/reset").then((r) => unwrap<{ ok: boolean }>(r)),
   runFleet: (count = 12) => post(`/api/demo/run-agents?count=${count}`).then((r) => unwrap<{ count: number }>(r)),
+  crossRegion: () => post("/api/demo/cross-region").then((r) => unwrap<CrossRegionResult>(r)),
 };

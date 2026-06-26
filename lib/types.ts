@@ -8,6 +8,16 @@
 
 export type Verdict = "allow" | "deny" | "escalate";
 
+/** The /api/demo/cross-region beat: allow on region A, revoke, deny on region B (one logical DSQL cluster). */
+export interface CrossRegionResult {
+  consistent: boolean;
+  crossRegionGapMs: number;
+  action: { actor: string; actionType: string; resource: string; amount: number };
+  regionA: { region: string; endpoint?: string; verdict: Verdict; reason: string; requestId: string };
+  revoke: { grantId: string; revokedAt: string };
+  regionB: { region: string; endpoint?: string; verdict: Verdict; reason: string; requestId: string; firedRuleIds: string[] };
+}
+
 export interface DecisionInput {
   /** Caller-supplied id of the proposed action; the idempotency key. */
   requestId: string;
