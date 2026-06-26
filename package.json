@@ -30,6 +30,7 @@
     "vitest": "^3.0.0"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.0",
     "@ai-sdk/react": "^4.0.2",
     "@aws-sdk/client-dsql": "^3.1071.0",
     "@aws-sdk/dsql-signer": "^3.1071.0",

@@ -70,7 +70,7 @@
 
         <mxCell id="t2title" value="Demo — two tabs, one contract: a real LLM agent (left) governed by Warden (right)" style="text;html=1;align=left;verticalAlign=middle;fontSize=15;fontStyle=1;fontColor=#14171A;" vertex="1" parent="1"><mxGeometry x="40" y="22" width="1000" height="30" as="geometry" /></mxCell>
 
-        <mxCell id="t2gw" value="Vercel AI Gateway → Anthropic Claude Sonnet 4.6" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#14171A;strokeColor=#000000;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="55" y="92" width="255" height="40" as="geometry" /></mxCell>
+        <mxCell id="t2gw" value="OpenAI (direct) · gpt-4.1 agent · gpt-4.1-mini NL→policy" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#14171A;strokeColor=#000000;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="55" y="88" width="270" height="46" as="geometry" /></mxCell>
 
         <mxCell id="t2tab1" value="Tab 1 · /agent — agent runtime (a separate app)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=6;fillColor=#1B1F24;strokeColor=#000000;fontColor=#FFFFFF;fontSize=12;fontStyle=1;verticalAlign=top;spacingTop=8;" vertex="1" parent="1"><mxGeometry x="40" y="158" width="290" height="252" as="geometry" /></mxCell>
         <mxCell id="t2llm" value="LLM agent · ToolLoopAgent&lt;br&gt;reasons, decides which tool to call" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#2A2F36;strokeColor=#3A424B;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="58" y="210" width="254" height="46" as="geometry" /></mxCell>
