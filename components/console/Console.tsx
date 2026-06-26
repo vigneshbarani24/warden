@@ -65,6 +65,17 @@ export function Console() {
     void refresh();
   }, [refresh]);
 
+  // Light live-refresh poll so an agent's decisions + sealed chain surface in the
+  // console for the two-tab demo. Skip while the tab is hidden — no point polling
+  // a background tab — and clear the interval on unmount.
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      void refresh();
+    }, 2500);
+    return () => clearInterval(id);
+  }, [refresh]);
+
   const selected = useMemo(
     () => decisions.find((d) => d.requestId === selectedId) ?? null,
     [decisions, selectedId],

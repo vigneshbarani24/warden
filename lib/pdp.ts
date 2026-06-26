@@ -13,7 +13,7 @@ import { evaluate } from "./engine";
 import { DsqlStore } from "./store-dsql";
 import { GENESIS, linkHash, verifyChain, type LedgerRow, type VerifyResult } from "./ledger";
 import { buildLedgerPayload } from "./payload";
-import type { DecisionInput, EvaluationResult, Verdict } from "./types";
+import type { CreateGrantInput, DecisionInput, EvaluationResult, SodDefinition, Verdict } from "./types";
 
 /** Map a resource org path to its business tower label, for the views. */
 function towerFromPath(path: string): string {
@@ -251,6 +251,49 @@ export async function getGrants(principalId?: string): Promise<GrantView[]> {
   });
 }
 
+/**
+ * Mint a new authority_grant. No FKs in DSQL, so parent existence is validated in-code,
+ * in the SAME transaction as the insert: the org path must equal an org_units.path or sit
+ * under one (descendant). A grant scoped to a non-existent org would silently never match
+ * any resource — so we reject it loudly instead of writing dead authority.
+ */
+export async function createGrant(input: CreateGrantInput, region: DsqlRegion = "A"): Promise<GrantView> {
+  const validFrom = input.validFrom ?? new Date(Date.now() - 864e5).toISOString();
+  const validTo = input.validTo ?? new Date(Date.now() + 365 * 864e5).toISOString();
+  const id = randomUUID();
+  return withRetry(async (client) => {
+    // Parent check: orgPath is an existing unit OR a descendant of one. $1 LIKE path || '%'
+    // matches "/global/trading/crude/x/" against the seeded "/global/trading/crude/" unit.
+    const parent = await client.query(
+      "SELECT 1 FROM org_units WHERE path = $1 OR $1 LIKE path || '%' LIMIT 1",
+      [input.orgPath],
+    );
+    if (parent.rowCount === 0) {
+      throw new Error(`No org unit matches org path ${input.orgPath}; create the org unit first`);
+    }
+    await client.query(
+      `INSERT INTO authority_grants
+         (id, principal_id, org_path, action_type, approval_limit, valid_from, valid_to, revoked_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,NULL)`,
+      [id, input.principalId, input.orgPath, input.actionType, String(input.approvalLimit), validFrom, validTo],
+    );
+    const now = Date.now();
+    const from = new Date(validFrom);
+    const to = new Date(validTo);
+    return {
+      id,
+      principalId: input.principalId,
+      orgPath: input.orgPath,
+      actionType: input.actionType,
+      approvalLimit: input.approvalLimit,
+      validFrom: from.toISOString(),
+      validTo: to.toISOString(),
+      revokedAt: null,
+      active: from.getTime() <= now && to.getTime() > now,
+    };
+  }, 5, region);
+}
+
 export interface PolicyRuleView {
   id: string;
   ruleType: string;
@@ -274,6 +317,52 @@ export async function getPolicyRules(): Promise<PolicyRuleView[]> {
       active: Boolean(r.active),
     };
   });
+}
+
+/** Toggle a policy rule on/off. An inactive SoD rule stops firing in the engine immediately. */
+export async function setPolicyActive(
+  id: string,
+  active: boolean,
+  region: DsqlRegion = "A",
+): Promise<{ id: string; active: boolean }> {
+  return withRetry(async (client) => {
+    const updated = await client.query(
+      "UPDATE policy_rules SET active = $2 WHERE id = $1 RETURNING id",
+      [id, active],
+    );
+    if (updated.rowCount === 0) throw new Error(`Policy rule ${id} not found`);
+    return { id, active };
+  }, 5, region);
+}
+
+/**
+ * Author a new SoD policy rule from a compiled definition (NL→policy LLM output or a manual
+ * control). The LLM never decides verdicts — it only compiles the conflicting-action pair the
+ * deterministic engine then enforces. Stored as JSONB, mirroring scripts/seed.ts.
+ */
+export async function createPolicyRule(
+  definition: { type: "sod"; code: string; conflicting: string[] },
+  region: DsqlRegion = "A",
+): Promise<PolicyRuleView> {
+  const id = randomUUID();
+  const def: SodDefinition = {
+    type: "sod",
+    code: definition.code,
+    conflicting: definition.conflicting,
+  };
+  return withRetry(async (client) => {
+    await client.query(
+      "INSERT INTO policy_rules (id, rule_type, definition, active) VALUES ($1, 'sod', $2, true)",
+      [id, JSON.stringify(def)],
+    );
+    return {
+      id,
+      ruleType: "sod",
+      code: typeof def.code === "string" ? def.code : id.slice(0, 8),
+      conflicting: def.conflicting,
+      active: true,
+    };
+  }, 5, region);
 }
 
 /**

@@ -55,6 +55,17 @@ export interface SodDefinition {
 
 export type PolicyDefinition = SodDefinition;
 
+/** Input to createGrant — mints an authority_grants row. validFrom/validTo default in the engine. */
+export interface CreateGrantInput {
+  principalId: string;
+  orgPath: string;
+  actionType: string;
+  approvalLimit: number;
+  /** ISO timestamps; default to now-1day / now+1year when omitted. */
+  validFrom?: string;
+  validTo?: string;
+}
+
 export interface PolicyRule {
   id: string;
   ruleType: string;
