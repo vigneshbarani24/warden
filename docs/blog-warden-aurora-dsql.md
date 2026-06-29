@@ -1,6 +1,10 @@
+<!-- DRAFT — edit into your own voice before publishing, then DELETE this comment.
+     Publish publicly (LinkedIn / dev.to / Medium / builder.aws.com), NOT unlisted,
+     before the deadline. Add #H0Hackathon when you share it on social. -->
+
 # Why an AI-agent permission check needs a strongly-consistent database (and how we built one on Aurora DSQL)
 
-*Written for the H0 "Hack the Zero Stack" hackathon (AWS Databases × Vercel). #H0Hackathon*
+*By Vignesh Barani Sivakumar. I created this post for the purpose of entering the H0 "Hack the Zero Stack" hackathon (AWS Databases × Vercel). #H0Hackathon*
 
 ## The problem nobody noticed until the actor stopped being human
 
@@ -61,6 +65,16 @@ That `FOR UPDATE` line is the most important line in the codebase. It's the diff
 
 The rest of the data model is hand-built to respect DSQL's other constraints, none of which are optional: no foreign keys (referential integrity is checked in app code, in the same transaction as the write); no sequences or `SERIAL`, so all ids are client-generated UUIDs; `CREATE INDEX ASYNC` with a poll for validity; IAM-token auth, no stored passwords. You don't fight these — you design around them, and the schema comes out cleaner for it.
 
+## The Vercel half: a serverless function that authenticates to DSQL with no stored secret
+
+The PDP runs as Next.js route handlers on Vercel, and two things made the deployment more than a hello-world.
+
+First, **IAM-token auth with no stored password.** DSQL doesn't take a static DB password — you mint a short-lived IAM auth token per connection. The `pg` pool generates a fresh token on every physical connection via `@aws-sdk/dsql-signer`, and the AWS credentials themselves come from Vercel's OIDC federation (`@vercel/oidc-aws-credentials-provider`): the function assumes an IAM role at runtime, so there are no long-lived keys in the project at all. For a public, judged repo, that matters — there's nothing to leak.
+
+Second, **the traps that cost real debugging.** Vercel functions run on AWS Lambda, which *reserves* `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` — set them as env vars and your code never sees the values, so the function can't authenticate to DSQL. The fix is non-reserved names (`DSQL_AWS_*`) passed explicitly to the signer. And env values piped into the platform can carry a trailing newline that breaks DSQL's TLS SNI routing, so every endpoint read is `.trim()`-ed and the pool pins `servername` to the host. On Fluid Compute the pool is created once at module scope and reused across invocations, so the token mint and TLS handshake amortize instead of being paid per request.
+
+The result is the "prototype on a weekend, same foundation as production" story the stack promises: strong-consistency multi-Region SQL behind a serverless function, no keys on disk.
+
 ## The honest comparison
 
 I won't tell you DSQL is the only consistent database. Spanner is strongly consistent. CockroachDB is. That claim would be wrong and an expert judge would catch it.
@@ -71,7 +85,7 @@ The claim is narrower and survives scrutiny: DSQL is the only **AWS-native** pri
 
 There's a working PDP live at the link below, running on a real multi-region DSQL cluster: us-east-1 ⇄ us-west-2, with a witness in us-east-2.
 
-The scene that proves both halves at once: a $2M trade is posted under a valid mandate and Warden returns **allow**, appending a sealed block to the ledger. Then the mandate is revoked. Seconds later the *identical* $2M action is evaluated **in the other region** — and comes back **deny**, citing the just-revoked grant, with `consistent = true`. That cross-region flip is the DSQL property no ordinary Postgres setup gives you. Around it: an SoD deny (created the vendor, now approving its invoice), an escalate (over limit, routed to the covering ancestor), and verify → tamper → break on the hash chain, where editing one row turns every seal from that sequence down red.
+The scene that proves both halves at once: a $2M trade is posted under a valid mandate and Warden returns **allow**, appending a sealed block to the ledger. Then the mandate is revoked. Seconds later the *identical* $2M action is evaluated **in the other region** — and comes back **deny**, citing the just-revoked grant, with `consistent = true`. That cross-region flip is the DSQL property no ordinary Postgres setup gives you. Around it: an SoD deny (a trading agent captures a deal, then tries to settle the very deal it just booked — front office can't be back office, `SOD-FBO-01`), an escalate (over limit, routed to the covering ancestor), and verify → tamper → break on the hash chain, where editing one row turns every seal from that sequence down red.
 
 ## Honest boundaries
 
@@ -82,4 +96,4 @@ None of that changes the thesis. The data model is the product, the strong-consi
 ---
 
 Live demo: https://warden-khaki.vercel.app
-Repo: (link)
+Repo: https://github.com/vigneshbarani24/warden
