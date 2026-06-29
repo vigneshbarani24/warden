@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Warden — H0 demo deck</title>
+<!-- Geist (Vercel's face) if reachable; robust system fallback if not. -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5/index.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5/index.css" />
+<style>
+  :root{
+    --paper:#EEF1F0; --ink:#14171A; --seal:#6E1D24; --panel:#E3E7E6; --line:#C9CFCD;
+    --allow:#1F7A4D; --deny:#B0271F; --escalate:#B5790A; --faint:#5A6470;
+    --sans:'Geist Variable','Geist Sans','Geist',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --mono:'Geist Mono Variable','Geist Mono',ui-monospace,'SF Mono','Cascadia Code',Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:#0c0d0e;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+  /* Stage = a single 16:9 slide, letterboxed and centered. */
+  #stage{position:fixed;inset:0;display:grid;place-items:center}
+  .slide{
+    display:none;position:relative;
+    width:min(100vw, calc(100vh * 16 / 9));
+    height:min(100vh, calc(100vw * 9 / 16));
+    background:var(--paper);
+    padding:7vmin 8vmin;
+    overflow:hidden;
+  }
+  .slide.on{display:flex;flex-direction:column;justify-content:center}
+  /* hairline frame + corner seal */
+  .slide::after{content:"";position:absolute;inset:2.4vmin;border:1px solid var(--line);pointer-events:none}
+  .kicker{font-family:var(--mono);font-size:1.7vmin;letter-spacing:.28em;text-transform:uppercase;color:var(--faint);margin-bottom:2.6vmin}
+  h1{font-size:8.2vmin;line-height:1.02;letter-spacing:-.02em;font-weight:600}
+  h2{font-size:5.6vmin;line-height:1.06;letter-spacing:-.015em;font-weight:600}
+  .lead{font-size:3vmin;line-height:1.4;color:#2b3036;margin-top:3vmin;max-width:62ch;font-weight:400}
+  .sub{font-size:2.2vmin;line-height:1.5;color:var(--faint);margin-top:2vmin;max-width:70ch}
+  .mono{font-family:var(--mono)}
+  .seal{display:inline-block;width:2.4vmin;height:2.4vmin;background:var(--seal);border-radius:2px;vertical-align:baseline}
+  .accent{color:var(--seal)}
+  .allow{color:var(--allow)} .deny{color:var(--deny)} .escalate{color:var(--escalate)}
+  .chip{display:inline-flex;align-items:center;gap:.5em;font-family:var(--mono);font-size:1.7vmin;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor;border-radius:3px;padding:.35em .7em}
+  .row{display:flex;gap:2vmin;flex-wrap:wrap;margin-top:3vmin}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:3vmin;margin-top:3.4vmin}
+  .card{background:#fff;border:1px solid var(--line);border-left:3px solid var(--seal);border-radius:4px;padding:3vmin}
+  .card h3{font-family:var(--mono);font-size:1.7vmin;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:500;margin-bottom:1.4vmin}
+  .card p{font-size:2.1vmin;line-height:1.45}
+  .codeline{font-family:var(--mono);font-size:2.1vmin;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:1.6vmin 2vmin;margin-top:3vmin;display:inline-block}
+  ul.tight{margin-top:2.6vmin;list-style:none}
+  ul.tight li{font-size:2.4vmin;line-height:1.55;padding-left:2.4vmin;position:relative;margin-bottom:1.1vmin}
+  ul.tight li::before{content:"";position:absolute;left:0;top:1.1vmin;width:.9vmin;height:.9vmin;background:var(--seal);border-radius:50%}
+  /* live-clip cue slides */
+  .clip{background:var(--ink);color:var(--paper)}
+  .clip::after{border-color:#2a2f35}
+  .clip .kicker{color:#8a96a2}
+  .clip h2{color:#fff}
+  .clip .lead{color:#c7d0d6}
+  .clipbar{margin-top:4vmin;display:inline-flex;align-items:center;gap:1.4vmin;font-family:var(--mono);font-size:2vmin;letter-spacing:.1em;text-transform:uppercase;color:#fff;border:1px dashed #4a5560;border-radius:4px;padding:1.6vmin 2.4vmin}
+  .clipbar .dot{width:1.4vmin;height:1.4vmin;border-radius:50%;background:var(--deny);box-shadow:0 0 12px var(--deny)}
+  .verds{display:flex;gap:1.4vmin;margin-top:3vmin;flex-wrap:wrap}
+  /* architecture diagram */
+  .arch{display:flex;align-items:center;gap:1.2vmin;margin-top:4vmin;flex-wrap:nowrap;font-family:var(--mono)}
+  .node{background:#fff;border:1px solid var(--line);border-radius:4px;padding:1.8vmin 1.8vmin;font-size:1.7vmin;line-height:1.35;text-align:center;flex:0 0 auto}
+  .node .t{font-weight:600;letter-spacing:.02em}
+  .node .s{color:var(--faint);font-size:1.45vmin;margin-top:.5vmin}
+  .node.warden{border-color:var(--seal);border-width:1.5px}
+  .node.dsql{border-color:#147EBA}
+  .arrow{flex:0 0 auto;color:var(--faint);font-size:1.5vmin;text-align:center;min-width:9vmin}
+  .arrow .lbl{display:block;font-size:1.25vmin;letter-spacing:.04em}
+  .closelinks{margin-top:4vmin;font-family:var(--mono);font-size:2.3vmin;line-height:1.9}
+  .closelinks a{color:var(--seal);text-decoration:none}
+  /* chrome */
+  #bar{position:fixed;top:0;left:0;height:3px;background:var(--seal);width:0;z-index:10;transition:width .25s}
+  #count{position:fixed;bottom:2.2vmin;right:2.6vmin;font-family:var(--mono);font-size:1.6vmin;color:#8a96a2;z-index:10}
+  #notes{position:fixed;left:0;right:0;bottom:0;background:rgba(10,12,14,.94);color:#dfe6ea;font-family:var(--mono);
+    font-size:15px;line-height:1.5;padding:14px 22px;display:none;z-index:11;border-top:1px solid #2a2f35;max-height:38vh;overflow:auto}
+  #notes b{color:#7fd1a0}
+  #hint{position:fixed;bottom:2.2vmin;left:2.6vmin;font-family:var(--mono);font-size:1.4vmin;color:#5a6470;z-index:10}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="stage">
+
+  <!-- 1 — TITLE -->
+  <section class="slide on" data-notes="(Let it sit two seconds.) Warden.">
+    <div class="kicker">H0 — Hack the Zero Stack · Track 2 · B2B</div>
+    <h1><span class="seal"></span> WARDEN</h1>
+    <p class="lead">The control plane for enterprise AI agents — an authority check it calls <em>before</em> it acts, and a tamper-evident record of every decision <em>after</em>.</p>
+    <div class="row"><span class="chip accent mono">Amazon Aurora DSQL</span><span class="chip mono" style="color:var(--faint)">Vercel</span></div>
+  </section>
+
+  <!-- 2 — PAIN -->
+  <section class="slide" data-notes="An AI agent books a trade, then approves the settlement on that same trade. Valid in the ERP. Illegal in the business — a segregation-of-duties breach. For the finance and risk teams now pointing agents at their ERP, that's the nightmare.">
+    <div class="kicker">The problem</div>
+    <h2>Valid in the ERP.<br><span class="accent">Illegal in the business.</span></h2>
+    <p class="lead">An AI agent books a trade — then approves the settlement on the deal it just booked. A segregation-of-duties breach, executed at machine speed, with no record of why it was allowed.</p>
+    <div class="row"><span class="chip mono" style="color:var(--faint)">for finance &amp; risk operators</span></div>
+  </section>
+
+  <!-- 3 — INSIGHT -->
+  <section class="slide" data-notes="These controls used to hold by accident — a human had to click, approvals took a day. Agents erase the delay, and the control vanishes with it. The gap is invisible: every action looks valid, and it widens with every agent you deploy.">
+    <div class="kicker">Why now</div>
+    <h2>The controls were never in the ERP.<br>They were in the <span class="accent">latency</span>.</h2>
+    <ul class="tight">
+      <li>A human had to click. Routing a transaction took a day across two desks.</li>
+      <li>Agents erase that delay — and the control vanishes with it.</li>
+      <li>The gap is invisible: every action looks valid, so nothing alarms — and it compounds with every agent you deploy.</li>
+    </ul>
+  </section>
+
+  <!-- 4 — WHAT IT IS -->
+  <section class="slide" data-notes="Warden puts the control back. A decision point the agent calls before it acts — allow, deny, or escalate, with a reason — and a tamper-evident ledger it writes to after.">
+    <div class="kicker">What Warden is</div>
+    <h2>A decision point before. A sealed record after.</h2>
+    <div class="cols">
+      <div class="card"><h3>Before the action — the PDP</h3><p>The agent posts a proposed action. Warden returns <span class="allow">allow</span> · <span class="deny">deny</span> · <span class="escalate">escalate</span>, with a human-readable reason and the rule ids that fired.</p></div>
+      <div class="card"><h3>After — the ledger</h3><p>Every verdict is appended to a hash-chained, append-only ledger. Tamper-<em>evident</em>: any edit is detectable, and provable.</p></div>
+    </div>
+    <div class="codeline">await warden.<span class="accent">decide</span>({ actor, action, resource, amount, orgPath })</div>
+  </section>
+
+  <!-- 5 — LIVE CLIP: agent allow/deny -->
+  <section class="slide clip" data-notes="Here's a real agent. It books a $4.2M deal — Warden allows it, and seals it on the right. Then it tries to settle the deal it just booked. Warden denies it — SOD-FBO-01 — and the agent halts. No retry, no workaround.">
+    <div class="kicker">▶ Live — the split view</div>
+    <h2>A real agent, governed.</h2>
+    <p class="lead">Left: the Crude Desk Agent. Right: Warden, sealing each verdict live.</p>
+    <div class="verds">
+      <span class="chip allow mono">✓ capture $4.2M DEAL-CR-9001 → allow</span>
+      <span class="chip deny mono">✕ settle same deal → deny · SOD-FBO-01</span>
+    </div>
+    <div class="clipbar"><span class="dot"></span> cut to screen recording — agent ⟷ console</div>
+  </section>
+
+  <!-- 6 — LIVE CLIP: verify/tamper -->
+  <section class="slide clip" data-notes="Every verdict is hash-chained. Verify — intact. Tamper with one sealed row, verify again — the break is caught at the exact sequence. Not just what was decided. Why.">
+    <div class="kicker">▶ Live — the defensible record</div>
+    <h2>Verify. Tamper. Watch it break.</h2>
+    <p class="lead">The sealed ledger spine: a verify pass locks every seal green; tampering one row turns the chain red from that sequence down.</p>
+    <div class="verds">
+      <span class="chip allow mono">verify → chain intact</span>
+      <span class="chip deny mono">tamper → break detected at seq</span>
+    </div>
+    <div class="clipbar"><span class="dot"></span> cut to screen recording — console: Verify / Tamper / Verify</div>
+  </section>
+
+  <!-- 7 — ARCHITECTURE -->
+  <section class="slide" data-notes="Any agent calls one HTTP contract. Warden resolves authority up the org hierarchy, locks the grant for update, evaluates, and seals the verdict — all in one transaction on Amazon Aurora DSQL.">
+    <div class="kicker">Architecture</div>
+    <h2>One contract. One transaction.</h2>
+    <div class="arch">
+      <div class="node"><div class="t">AI agent</div><div class="s">@warden/sdk</div></div>
+      <div class="arrow">──▶<span class="lbl">POST /decide</span></div>
+      <div class="node warden"><div class="t">Warden PDP</div><div class="s">resolve authority ·<br>FOR UPDATE · evaluate ·<br>seal — one txn · withRetry</div></div>
+      <div class="arrow">──▶<span class="lbl">pg · IAM token</span></div>
+      <div class="node dsql"><div class="t">Amazon Aurora DSQL</div><div class="s">multi-Region active-active<br>us-east-1 ⇄ us-west-2<br>+ witness · decisions + ledger</div></div>
+    </div>
+    <p class="sub">No foreign keys, no sequences — integrity enforced in-transaction; ids are client UUIDs. The grant lock is what makes a concurrent revoke abort instead of approving stale.</p>
+  </section>
+
+  <!-- 8 — LIVE CLIP: cross-region + why DSQL -->
+  <section class="slide clip" data-notes="Why DSQL? It's active-active across regions. Allow a trade in Virginia, revoke the authority, and Oregon denies the identical action immediately — no stale read. That's the property the whole product rests on, and DSQL is the only AWS-native database that gives it with full SQL transactions.">
+    <div class="kicker">▶ Live — why Amazon Aurora DSQL</div>
+    <h2>Revoked here. Denied there. Instantly.</h2>
+    <p class="lead">Allow a $2M trade in <span class="mono">us-east-1</span> → revoke the mandate → the identical action in <span class="mono">us-west-2</span> is denied, with no stale read.</p>
+    <p class="sub">The only AWS-native database giving synchronous, active-active strong consistency <em>and</em> the <span class="mono">SELECT … FOR UPDATE</span> transaction this decision needs.</p>
+    <div class="clipbar"><span class="dot"></span> cut to screen recording — console: Cross-region → Run</div>
+  </section>
+
+  <!-- 9 — IMPACT -->
+  <section class="slide" data-notes="Govern the action before it happens, or explain it at the audit. Warden's live today, and any agent can call the same contract.">
+    <div class="kicker">Impact</div>
+    <h2>Govern the action before it happens —<br>or <span class="accent">explain it at the audit</span>.</h2>
+    <p class="lead">Priced to the cost it avoids: one missed segregation-of-duties breach on a material payment dwarfs a year of fees. Per governed principal, per high-value decision.</p>
+    <p class="sub"><span class="mono">Next:</span> DB-enforced ledger immutability (least-privilege role) · auth on admin endpoints · real ERP connectors behind the same contract.</p>
+  </section>
+
+  <!-- 10 — CLOSE -->
+  <section class="slide" data-notes="(Silent, two seconds.)">
+    <div class="kicker"><span class="seal"></span> Warden</div>
+    <h2>The control plane for enterprise AI agents.</h2>
+    <div class="closelinks">
+      <div>try it &nbsp;·&nbsp; <a href="https://warden-khaki.vercel.app">warden-khaki.vercel.app</a></div>
+      <div>code &nbsp;·&nbsp; <a href="https://github.com/vigneshbarani24/warden">github.com/vigneshbarani24/warden</a></div>
+      <div style="color:var(--faint)">Built on Amazon Aurora DSQL + Vercel</div>
+    </div>
+  </section>
+
+</div>
+
+<div id="bar"></div>
+<div id="count">1 / 10</div>
+<div id="hint">← →  move  ·  F  fullscreen  ·  N  notes</div>
+<div id="notes"></div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const bar=document.getElementById('bar'),count=document.getElementById('count'),notes=document.getElementById('notes');
+  let i=0,showNotes=false;
+  function render(){
+    slides.forEach((s,n)=>s.classList.toggle('on',n===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';
+    count.textContent=(i+1)+' / '+slides.length;
+    if(showNotes){notes.style.display='block';notes.innerHTML='<b>VO '+(i+1)+':</b> '+(slides[i].dataset.notes||'');}
+  }
+  function go(n){i=Math.max(0,Math.min(slides.length-1,n));render();}
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();go(i+1);}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(i-1);}
+    else if(e.key==='Home'){go(0);} else if(e.key==='End'){go(slides.length-1);}
+    else if(e.key.toLowerCase()==='f'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}
+    else if(e.key.toLowerCase()==='n'){showNotes=!showNotes;notes.style.display=showNotes?'block':'none';render();}
+  });
+  document.getElementById('stage').addEventListener('click',e=>{if(e.target.closest('a'))return;go(i+1);});
+  render();
+</script>
+</body>
+</html>
