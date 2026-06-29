@@ -1,0 +1,61 @@
+<mxfile host="app.diagrams.net" agent="Warden H0" version="24.0.0">
+  <diagram name="Demo-path sequence" id="warden-seq-1">
+    <mxGraphModel dx="1400" dy="820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="760" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="Warden — the demo path: a valid capture, then the same agent's illegal self-settlement (SoD), each in one Aurora DSQL transaction" style="text;html=1;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#14171A;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1230" height="28" as="geometry" />
+        </mxCell>
+
+        <!-- Lifeline headers -->
+        <mxCell id="hAgent" value="AI agent&#10;(@warden/sdk)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="70" width="180" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="hPdp" value="Warden PDP&#10;/api/pdp/decide" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#F6EFE9;strokeColor=#6E1D24;fontColor=#14171A;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="70" width="180" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="hEngine" value="Engine&#10;lib/engine.ts" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="670" y="70" width="180" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="hDsql" value="Amazon Aurora DSQL&#10;decisions + ledger" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FFFFFF;strokeColor=#00A4A6;fontColor=#147EBA;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="70" width="200" height="46" as="geometry" />
+        </mxCell>
+
+        <!-- Lifelines -->
+        <mxCell id="lAgent" style="endArrow=none;dashed=1;html=1;strokeColor=#9AA3A2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="116" as="sourcePoint" /><mxPoint x="160" y="700" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="lPdp" style="endArrow=none;dashed=1;html=1;strokeColor=#9AA3A2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="460" y="116" as="sourcePoint" /><mxPoint x="460" y="700" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="lEngine" style="endArrow=none;dashed=1;html=1;strokeColor=#9AA3A2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="760" y="116" as="sourcePoint" /><mxPoint x="760" y="700" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="lDsql" style="endArrow=none;dashed=1;html=1;strokeColor=#9AA3A2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1100" y="116" as="sourcePoint" /><mxPoint x="1100" y="700" as="targetPoint" /></mxGeometry></mxCell>
+
+        <!-- Phase 1 banner -->
+        <mxCell id="b1" value="① a valid trade — ALLOW" style="text;html=1;align=left;fontSize=12;fontStyle=2;fontColor=#1F7A4D;" vertex="1" parent="1"><mxGeometry x="70" y="130" width="400" height="20" as="geometry" /></mxCell>
+
+        <mxCell id="m1" value="POST decide {capture_trade · DEAL-CR-8801 · $4.2M}" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#6E1D24;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="160" as="sourcePoint" /><mxPoint x="460" y="160" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m2" value="BEGIN · activeGrants · SELECT … FOR UPDATE (lock covering grants)" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#147EBA;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="460" y="195" as="sourcePoint" /><mxPoint x="1100" y="195" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m3" value="evaluate(input, store)" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#232F3E;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="460" y="230" as="sourcePoint" /><mxPoint x="760" y="230" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m4" value="read SoD rules + prior actions" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#147EBA;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="760" y="265" as="sourcePoint" /><mxPoint x="1100" y="265" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m5" value="ALLOW · authority ✓ · limit ✓ · SoD ✓" style="endArrow=block;dashed=1;html=1;fontSize=11;fontColor=#1F7A4D;strokeColor=#1F7A4D;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="760" y="300" as="sourcePoint" /><mxPoint x="460" y="300" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m6" value="INSERT decision + ledger append (hash chain) · COMMIT" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#147EBA;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="460" y="335" as="sourcePoint" /><mxPoint x="1100" y="335" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m7" value="allow (+ reason)" style="endArrow=block;dashed=1;html=1;fontSize=11;fontColor=#1F7A4D;strokeColor=#1F7A4D;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="460" y="370" as="sourcePoint" /><mxPoint x="160" y="370" as="targetPoint" /></mxGeometry></mxCell>
+
+        <!-- Divider -->
+        <mxCell id="div" value="" style="endArrow=none;html=1;strokeColor=#C9CFCD;dashed=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="70" y="400" as="sourcePoint" /><mxPoint x="1200" y="400" as="targetPoint" /></mxGeometry></mxCell>
+
+        <!-- Phase 2 banner -->
+        <mxCell id="b2" value="② the same agent settles the deal it just captured — DENY" style="text;html=1;align=left;fontSize=12;fontStyle=2;fontColor=#B0271F;" vertex="1" parent="1"><mxGeometry x="70" y="412" width="500" height="20" as="geometry" /></mxCell>
+
+        <mxCell id="m8" value="POST decide {approve_settlement · SAME DEAL-CR-8801}" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#6E1D24;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="160" y="445" as="sourcePoint" /><mxPoint x="460" y="445" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m9" value="evaluate → prior capture_trade by this actor on this resource" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#232F3E;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="460" y="480" as="sourcePoint" /><mxPoint x="760" y="480" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m10" value="DENY · SOD-FBO-01 (front office can't be back office)" style="endArrow=block;dashed=1;html=1;fontSize=11;fontColor=#B0271F;strokeColor=#B0271F;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="760" y="515" as="sourcePoint" /><mxPoint x="460" y="515" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m11" value="deny + reason + rule id (sealed to ledger)" style="endArrow=block;dashed=1;html=1;fontSize=11;fontColor=#B0271F;strokeColor=#B0271F;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="460" y="550" as="sourcePoint" /><mxPoint x="160" y="550" as="targetPoint" /></mxGeometry></mxCell>
+
+        <!-- Cross-region note -->
+        <mxCell id="note" value="③ cross-region (the DSQL beat): the same decision path, run on a multi-Region cluster — allow in us-east-1, revoke, then the identical action in us-west-2 returns DENY with zero stale read. /api/demo/cross-region" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#EEF1F0;strokeColor=#00A4A6;fontColor=#14171A;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="600" width="1130" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

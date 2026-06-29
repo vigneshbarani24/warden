@@ -1,0 +1,63 @@
+<mxfile host="app.diagrams.net" agent="Warden H0" version="24.0.0">
+  <diagram name="System context" id="warden-context-1">
+    <mxGraphModel dx="1400" dy="820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="Warden — system context (who talks to it, and what it talks to)" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#14171A;" vertex="1" parent="1">
+          <mxGeometry x="40" y="24" width="900" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Actors -->
+        <mxCell id="agent" value="Enterprise AI agent&#10;(SAP Joule · Oracle · LangGraph · custom)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="150" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ops" value="Finance &amp; risk operators&#10;(forensic console)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="430" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- The system (one box) -->
+        <mxCell id="warden" value="WARDEN&#10;&#10;Pre-execution business-authority Policy Decision Point&#10;+ tamper-evident hash-chained ledger&#10;(Next.js on Vercel)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=6;fillColor=#F6EFE9;strokeColor=#6E1D24;fontColor=#14171A;fontSize=13;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="470" y="270" width="320" height="160" as="geometry" />
+        </mxCell>
+
+        <!-- External systems -->
+        <mxCell id="dsql" value="Amazon Aurora DSQL&#10;multi-Region · active-active · strongly consistent" style="sketch=0;outlineConnect=0;fontColor=#147EBA;gradientColor=none;fillColor=none;strokeColor=#00A4A6;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.aurora;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="150" width="78" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="openai" value="OpenAI (gpt-4.1)&#10;thin agent + NL→policy — never decides a verdict&#10;[SIMULATED agent / supporting]" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;dashed=1;fillColor=#FFFFFF;strokeColor=#B5790A;fontColor=#14171A;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="980" y="300" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="vercel" value="Vercel&#10;hosting · Fluid Compute · OIDC→AWS" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="980" y="430" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Edges -->
+        <mxCell id="e1" value="POST proposed action (HTTPS / @warden/sdk)" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#6E1D24;" edge="1" parent="1" source="agent" target="warden">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="allow · deny · escalate (+ reason, + rule ids)" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#1F7A4D;dashed=1;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="warden" target="agent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="inspect · revoke · verify · tamper (console)" style="endArrow=block;startArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#232F3E;" edge="1" parent="1" source="ops" target="warden">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="decision + ledger append&#10;ONE transaction, FOR UPDATE, withRetry (SQL)" style="endArrow=block;startArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#147EBA;" edge="1" parent="1" source="warden" target="dsql">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="propose action / compile policy (LLM)" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#B5790A;dashed=1;" edge="1" parent="1" source="warden" target="openai">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="runs on" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#232F3E;dashed=1;" edge="1" parent="1" source="warden" target="vercel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Legend -->
+        <mxCell id="legend" value="Legend:  solid = live, end-to-end    ·    dashed amber = simulated / supporting (LLM never decides)    ·    teal = Aurora DSQL data path" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#444B50;" vertex="1" parent="1">
+          <mxGeometry x="60" y="560" width="1160" height="24" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
