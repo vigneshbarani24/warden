@@ -104,7 +104,7 @@ The emerging **OpenID AuthZEN AARP** draft (WG draft, Jun 2026) standardizes the
 - **`lib/db.ts`** — Fluid-aware `pg` pool with IAM-token auth: OIDC federation or non-reserved `DSQL_AWS_*` keys on Vercel, default credential chain locally; region-keyed pools for the cross-region demo.
 - **`app/api/*`** — Node-runtime route handlers. **`packages/sdk`** — the typed client.
 
-**Diagrams** (open in [diagrams.net](https://app.diagrams.net)): [`docs/context.drawio`](docs/context.drawio) (system context, 60-second glance) · [`docs/warden-architecture.drawio`](docs/warden-architecture.drawio) (components + deployment) · [`docs/sequence.drawio`](docs/sequence.drawio) (the demo-path sequence).
+**Diagrams** — one file, four sheets (open in [diagrams.net](https://app.diagrams.net), or the Draw.io VS Code extension): [`docs/warden-diagrams.drawio`](docs/warden-diagrams.drawio) → ① system context · ② architecture (components) · ③ how the agent works (tool-loop + gating) · ④ demo-path sequence.
 
 ---
 

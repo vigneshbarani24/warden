@@ -1,0 +1,134 @@
+<mxfile host="app.diagrams.net" agent="Warden H0" version="24.0.0">
+
+  <diagram name="1 · Context" id="ctx">
+    <mxGraphModel dx="1200" dy="760" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1180" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="c0" /><mxCell id="c1" parent="c0" />
+        <mxCell id="ctitle" value="Warden — system context (who calls it, what it calls)" style="text;html=1;align=left;fontSize=16;fontStyle=1;fontColor=#14171A;" vertex="1" parent="c1"><mxGeometry x="40" y="22" width="900" height="28" as="geometry" /></mxCell>
+
+        <mxCell id="agent" value="Enterprise AI agent&lt;br&gt;SAP Joule · Oracle · LangGraph · custom" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=12;fontStyle=1;" vertex="1" parent="c1"><mxGeometry x="60" y="150" width="220" height="70" as="geometry" /></mxCell>
+        <mxCell id="ops" value="Finance and risk operators&lt;br&gt;(forensic console)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=12;fontStyle=1;" vertex="1" parent="c1"><mxGeometry x="60" y="440" width="220" height="70" as="geometry" /></mxCell>
+
+        <mxCell id="warden" value="WARDEN&lt;br&gt;&lt;br&gt;pre-execution authority PDP&lt;br&gt;+ tamper-evident ledger&lt;br&gt;(Next.js on Vercel)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=6;fillColor=#F6EFE9;strokeColor=#6E1D24;fontColor=#14171A;fontSize=13;fontStyle=1;" vertex="1" parent="c1"><mxGeometry x="470" y="250" width="300" height="160" as="geometry" /></mxCell>
+
+        <mxCell id="dsql" value="Amazon Aurora DSQL&lt;br&gt;multi-Region · active-active&lt;br&gt;strongly consistent" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#147EBA;fontColor=#147EBA;fontSize=12;fontStyle=1;" vertex="1" parent="c1"><mxGeometry x="960" y="150" width="220" height="80" as="geometry" /></mxCell>
+        <mxCell id="openai" value="OpenAI gpt-4.1&lt;br&gt;thin: agent + NL→policy&lt;br&gt;(never decides a verdict)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;dashed=1;fillColor=#FFFFFF;strokeColor=#B5790A;fontColor=#14171A;fontSize=11;" vertex="1" parent="c1"><mxGeometry x="940" y="300" width="240" height="70" as="geometry" /></mxCell>
+        <mxCell id="vercel" value="Vercel&lt;br&gt;hosting · OIDC → AWS IAM" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="c1"><mxGeometry x="960" y="440" width="220" height="55" as="geometry" /></mxCell>
+
+        <mxCell id="e1" value="POST proposed action (HTTPS / @warden/sdk)" style="endArrow=block;html=1;fontSize=10;fontColor=#14171A;strokeColor=#6E1D24;" edge="1" parent="c1" source="agent" target="warden"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" value="allow · deny · escalate (+reason, +rule ids)" style="endArrow=block;dashed=1;html=1;fontSize=10;fontColor=#1F7A4D;strokeColor=#1F7A4D;exitX=0.3;exitY=0;exitDx=0;exitDy=0;entryX=0.8;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="c1" source="warden" target="agent"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3" value="inspect · revoke · verify (console)" style="endArrow=block;startArrow=block;html=1;fontSize=10;fontColor=#14171A;strokeColor=#232F3E;" edge="1" parent="c1" source="ops" target="warden"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e4" value="decision + ledger · one txn · FOR UPDATE" style="endArrow=block;startArrow=block;html=1;fontSize=10;fontColor=#147EBA;strokeColor=#147EBA;" edge="1" parent="c1" source="warden" target="dsql"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e5" value="propose action / compile policy" style="endArrow=block;dashed=1;html=1;fontSize=10;fontColor=#B5790A;strokeColor=#B5790A;" edge="1" parent="c1" source="warden" target="openai"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e6" value="runs on" style="endArrow=block;dashed=1;html=1;fontSize=10;fontColor=#14171A;strokeColor=#232F3E;" edge="1" parent="c1" source="warden" target="vercel"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="cleg" value="Legend:  solid = live data path   ·   teal = Aurora DSQL   ·   dashed amber = LLM (thin, never decides)" style="text;html=1;align=left;fontSize=11;fontColor=#5A6470;" vertex="1" parent="c1"><mxGeometry x="60" y="560" width="1080" height="22" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram name="2 · Architecture" id="arch">
+    <mxGraphModel dx="1200" dy="760" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1180" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="a0" /><mxCell id="a1" parent="a0" />
+        <mxCell id="atitle" value="Warden — architecture (components). One contract, one transaction." style="text;html=1;align=left;fontSize=16;fontStyle=1;fontColor=#14171A;" vertex="1" parent="a1"><mxGeometry x="40" y="20" width="900" height="28" as="geometry" /></mxCell>
+
+        <mxCell id="agentUI" value="Agent runtime UI&lt;br&gt;/agent (dark terminal)&lt;br&gt;useChat → streamed" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="a1"><mxGeometry x="50" y="150" width="200" height="70" as="geometry" /></mxCell>
+        <mxCell id="consoleUI" value="Warden console&lt;br&gt;/console — Operations,&lt;br&gt;Cross-region, Controls&lt;br&gt;polls APIs every 2.5s" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="a1"><mxGeometry x="50" y="410" width="200" height="90" as="geometry" /></mxCell>
+
+        <mxCell id="wbox" value="Warden — Vercel (Next.js, Node runtime)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=4;fillColor=#F4F4F4;strokeColor=#6E1D24;fontColor=#14171A;fontSize=12;fontStyle=1;verticalAlign=top;spacingTop=8;" vertex="1" parent="a1"><mxGeometry x="320" y="120" width="380" height="470" as="geometry" /></mxCell>
+        <mxCell id="rAgent" value="/api/agent (stream)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="a1"><mxGeometry x="340" y="170" width="150" height="46" as="geometry" /></mxCell>
+        <mxCell id="rDecide" value="/api/pdp/decide&lt;br&gt;+ /api/demo/*" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#6E1D24;fontColor=#14171A;fontSize=11;" vertex="1" parent="a1"><mxGeometry x="510" y="170" width="170" height="46" as="geometry" /></mxCell>
+        <mxCell id="llm" value="LLM layer&lt;br&gt;ai/model.ts gpt-4.1&lt;br&gt;ai/policy-author" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;dashed=1;fillColor=#FFFFFF;strokeColor=#B5790A;fontColor=#14171A;fontSize=11;" vertex="1" parent="a1"><mxGeometry x="340" y="240" width="150" height="80" as="geometry" /></mxCell>
+        <mxCell id="engine" value="engine (pure)&lt;br&gt;authority → limit → SoD&lt;br&gt;FOR UPDATE · one txn&lt;br&gt;withRetry (40001)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="a1"><mxGeometry x="510" y="240" width="170" height="90" as="geometry" /></mxCell>
+        <mxCell id="led" value="ledger.ts + payload.ts — SHA-256 hash chain · verifyChain()" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="a1"><mxGeometry x="340" y="360" width="340" height="50" as="geometry" /></mxCell>
+        <mxCell id="reads" value="read APIs: /api/decisions · /grants · /ledger · /ledger/verify · /policies" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="a1"><mxGeometry x="340" y="430" width="340" height="50" as="geometry" /></mxCell>
+        <mxCell id="conn" value="db.ts — pg pool · IAM-token auth (DsqlSigner) · region-keyed pools A/B" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="a1"><mxGeometry x="340" y="500" width="340" height="46" as="geometry" /></mxCell>
+
+        <mxCell id="dbox" value="Amazon Aurora DSQL — multi-Region active-active" style="rounded=1;whiteSpace=wrap;html=1;arcSize=4;fillColor=#FFFFFF;strokeColor=#147EBA;fontColor=#147EBA;fontSize=12;fontStyle=1;verticalAlign=top;spacingTop=8;dashed=1;" vertex="1" parent="a1"><mxGeometry x="760" y="150" width="360" height="420" as="geometry" /></mxCell>
+        <mxCell id="regA" value="region A&lt;br&gt;us-east-1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#EAF3F8;strokeColor=#147EBA;fontColor=#14171A;fontSize=11;" vertex="1" parent="a1"><mxGeometry x="785" y="210" width="140" height="55" as="geometry" /></mxCell>
+        <mxCell id="regB" value="region B&lt;br&gt;us-west-2" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#EAF3F8;strokeColor=#147EBA;fontColor=#14171A;fontSize=11;" vertex="1" parent="a1"><mxGeometry x="955" y="210" width="140" height="55" as="geometry" /></mxCell>
+        <mxCell id="wit" value="witness · us-east-2 (commit quorum)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;dashed=1;fillColor=#FFFFFF;strokeColor=#147EBA;fontColor=#14171A;fontSize=10;" vertex="1" parent="a1"><mxGeometry x="840" y="290" width="200" height="40" as="geometry" /></mxCell>
+        <mxCell id="tbl" value="5 tables — no FKs, UUID PKs:&lt;br&gt;org_units · authority_grants&lt;br&gt;policy_rules · decisions · ledger" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#147EBA;fontColor=#14171A;fontSize=11;" vertex="1" parent="a1"><mxGeometry x="785" y="360" width="310" height="100" as="geometry" /></mxCell>
+
+        <mxCell id="ae1" value="POST /api/agent" style="endArrow=block;html=1;fontSize=10;fontColor=#14171A;strokeColor=#232F3E;" edge="1" parent="a1" source="agentUI" target="rAgent"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ae2" value="GET (poll 2.5s)" style="endArrow=block;html=1;fontSize=10;fontColor=#14171A;strokeColor=#232F3E;" edge="1" parent="a1" source="consoleUI" target="reads"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ae3" value="ToolLoopAgent" style="endArrow=block;html=1;fontSize=10;fontColor=#B5790A;strokeColor=#B5790A;dashed=1;" edge="1" parent="a1" source="rAgent" target="llm"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ae4" value="tools call decide()" style="endArrow=block;html=1;fontSize=10;fontColor=#14171A;strokeColor=#232F3E;" edge="1" parent="a1" source="llm" target="engine"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ae5" value="decide()" style="endArrow=block;html=1;fontSize=10;fontColor=#6E1D24;strokeColor=#6E1D24;" edge="1" parent="a1" source="rDecide" target="engine"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ae6" value="pg · IAM token · one txn (FOR UPDATE)" style="endArrow=block;startArrow=block;html=1;fontSize=10;fontColor=#147EBA;strokeColor=#147EBA;" edge="1" parent="a1" source="conn" target="dbox"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram name="3 · How the agent works" id="agentflow">
+    <mxGraphModel dx="1200" dy="760" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1180" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="g0" /><mxCell id="g1" parent="g0" />
+        <mxCell id="gtitle" value="How the Warden-gated agent works — the LLM proposes, Warden decides" style="text;html=1;align=left;fontSize=16;fontStyle=1;fontColor=#14171A;" vertex="1" parent="g1"><mxGeometry x="40" y="20" width="1000" height="28" as="geometry" /></mxCell>
+
+        <mxCell id="op" value="Operator&lt;br&gt;/agent (browser)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=12;fontStyle=1;" vertex="1" parent="g1"><mxGeometry x="60" y="250" width="170" height="60" as="geometry" /></mxCell>
+
+        <mxCell id="loop" value="ToolLoopAgent · gpt-4.1 · lib/agents/erp-agent.ts&lt;br&gt;acts as maya.chen · /global/trading/crude/ · stopWhen 8 steps" style="rounded=1;whiteSpace=wrap;html=1;arcSize=4;fillColor=#F4F4F4;strokeColor=#B5790A;fontColor=#14171A;fontSize=11;fontStyle=1;verticalAlign=top;spacingTop=8;dashed=1;" vertex="1" parent="g1"><mxGeometry x="290" y="110" width="430" height="380" as="geometry" /></mxCell>
+        <mxCell id="s1" value="1 · LLM picks a tool — captureTrade | approveSettlement | approvePayment {resource, amount}" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="g1"><mxGeometry x="310" y="160" width="390" height="46" as="geometry" /></mxCell>
+        <mxCell id="s2" value="2 · tool.gatedExecute() calls Warden decide() — lib/tools/erp-tools.ts" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="g1"><mxGeometry x="310" y="222" width="390" height="44" as="geometry" /></mxCell>
+        <mxCell id="sV" value="verdict?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="g1"><mxGeometry x="500" y="278" width="100" height="46" as="geometry" /></mxCell>
+        <mxCell id="sAllow" value="allow → action mock-executed&lt;br&gt;(no real ERP) · executed: true" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#EAF5EE;strokeColor=#1F7A4D;fontColor=#14171A;fontSize=11;" vertex="1" parent="g1"><mxGeometry x="310" y="338" width="185" height="58" as="geometry" /></mxCell>
+        <mxCell id="sDeny" value="deny / escalate → HALT&lt;br&gt;agent does not act · cites reason + rule id" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F8ECEB;strokeColor=#B0271F;fontColor=#14171A;fontSize=11;" vertex="1" parent="g1"><mxGeometry x="515" y="338" width="185" height="58" as="geometry" /></mxCell>
+        <mxCell id="s4" value="3 · result returns to the loop → LLM narrates briefly → 4 · streamed to the browser (text + verdict card)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="g1"><mxGeometry x="310" y="418" width="390" height="50" as="geometry" /></mxCell>
+
+        <mxCell id="pdp" value="Warden PDP · decide() — lib/pdp.ts&lt;br&gt;ONE Aurora DSQL txn · SELECT … FOR UPDATE&lt;br&gt;engine: authority → limit → SoD → verdict" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F6EFE9;strokeColor=#6E1D24;fontColor=#14171A;fontSize=11;fontStyle=1;" vertex="1" parent="g1"><mxGeometry x="780" y="180" width="320" height="90" as="geometry" /></mxCell>
+        <mxCell id="db" value="Aurora DSQL — writes decision row + hash-chained ledger append" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#147EBA;fontColor=#147EBA;fontSize=11;fontStyle=1;" vertex="1" parent="g1"><mxGeometry x="780" y="300" width="320" height="60" as="geometry" /></mxCell>
+        <mxCell id="cons" value="Warden console (other tab)&lt;br&gt;polls /api/decisions + /api/ledger every 2.5s — verdicts surface live" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=11;" vertex="1" parent="g1"><mxGeometry x="780" y="400" width="320" height="70" as="geometry" /></mxCell>
+
+        <mxCell id="ge0" value="POST /api/agent (UI messages, streamed back)" style="endArrow=block;html=1;fontSize=10;fontColor=#14171A;strokeColor=#232F3E;" edge="1" parent="g1" source="op" target="loop"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ge1" value="" style="endArrow=block;html=1;strokeColor=#232F3E;" edge="1" parent="g1" source="s1" target="s2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ge2" value="" style="endArrow=block;html=1;strokeColor=#232F3E;" edge="1" parent="g1" source="s2" target="sV"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ge3" value="allow" style="endArrow=block;html=1;fontSize=10;fontColor=#1F7A4D;strokeColor=#1F7A4D;" edge="1" parent="g1" source="sV" target="sAllow"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ge4" value="deny / escalate" style="endArrow=block;html=1;fontSize=10;fontColor=#B0271F;strokeColor=#B0271F;" edge="1" parent="g1" source="sV" target="sDeny"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ge5" value="decide({actor: maya.chen, actionType, resource, amount, orgPath})" style="endArrow=block;html=1;fontSize=10;fontColor=#6E1D24;strokeColor=#6E1D24;" edge="1" parent="g1" source="s2" target="pdp"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ge6" value="reads grants/SoD · seals verdict" style="endArrow=block;html=1;fontSize=10;fontColor=#147EBA;strokeColor=#147EBA;" edge="1" parent="g1" source="pdp" target="db"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ge7" value="surfaces in the other tab" style="endArrow=block;dashed=1;html=1;fontSize=10;fontColor=#14171A;strokeColor=#5A6470;" edge="1" parent="g1" source="db" target="cons"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="gnote" value="The LLM never returns the verdict. The tools call decide(); Warden's deterministic engine is the source of truth. A deny or escalate halts the agent — it does not retry or route around the control." style="rounded=1;whiteSpace=wrap;html=1;arcSize=6;fillColor=#EEF1F0;strokeColor=#C9CFCD;fontColor=#14171A;fontSize=11;align=left;verticalAlign=middle;spacingLeft=12;" vertex="1" parent="g1"><mxGeometry x="60" y="520" width="1040" height="50" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram name="4 · Sequence (demo path)" id="seq">
+    <mxGraphModel dx="1200" dy="760" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1180" pageHeight="720" math="0" shadow="0">
+      <root>
+        <mxCell id="s0" /><mxCell id="sx1" parent="s0" />
+        <mxCell id="stitle" value="Demo path — a valid capture, then the same agent's illegal self-settlement (SoD), each in one DSQL txn" style="text;html=1;align=left;fontSize=14;fontStyle=1;fontColor=#14171A;" vertex="1" parent="sx1"><mxGeometry x="40" y="18" width="1120" height="26" as="geometry" /></mxCell>
+
+        <mxCell id="hA" value="AI agent (@warden/sdk)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=12;fontStyle=1;" vertex="1" parent="sx1"><mxGeometry x="70" y="64" width="170" height="44" as="geometry" /></mxCell>
+        <mxCell id="hP" value="Warden PDP /api/pdp/decide" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#F6EFE9;strokeColor=#6E1D24;fontColor=#14171A;fontSize=12;fontStyle=1;" vertex="1" parent="sx1"><mxGeometry x="360" y="64" width="180" height="44" as="geometry" /></mxCell>
+        <mxCell id="hE" value="Engine lib/engine.ts" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#14171A;fontSize=12;fontStyle=1;" vertex="1" parent="sx1"><mxGeometry x="660" y="64" width="170" height="44" as="geometry" /></mxCell>
+        <mxCell id="hD" value="Aurora DSQL (decisions + ledger)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FFFFFF;strokeColor=#147EBA;fontColor=#147EBA;fontSize=12;fontStyle=1;" vertex="1" parent="sx1"><mxGeometry x="980" y="64" width="200" height="44" as="geometry" /></mxCell>
+
+        <mxCell id="lA" style="endArrow=none;dashed=1;html=1;strokeColor=#9AA3A2;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="155" y="108" as="sourcePoint" /><mxPoint x="155" y="690" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="lP" style="endArrow=none;dashed=1;html=1;strokeColor=#9AA3A2;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="108" as="sourcePoint" /><mxPoint x="450" y="690" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="lE" style="endArrow=none;dashed=1;html=1;strokeColor=#9AA3A2;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="745" y="108" as="sourcePoint" /><mxPoint x="745" y="690" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="lD" style="endArrow=none;dashed=1;html=1;strokeColor=#9AA3A2;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="1080" y="108" as="sourcePoint" /><mxPoint x="1080" y="690" as="targetPoint" /></mxGeometry></mxCell>
+
+        <mxCell id="b1" value="① a valid trade — ALLOW" style="text;html=1;align=left;fontSize=12;fontStyle=2;fontColor=#1F7A4D;" vertex="1" parent="sx1"><mxGeometry x="70" y="124" width="400" height="20" as="geometry" /></mxCell>
+        <mxCell id="m1" value="POST decide {capture_trade · DEAL-CR-9001 · $4.2M}" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#6E1D24;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="155" y="156" as="sourcePoint" /><mxPoint x="450" y="156" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m2" value="BEGIN · activeGrants · SELECT … FOR UPDATE (lock covering grant)" style="endArrow=block;html=1;fontSize=11;fontColor=#147EBA;strokeColor=#147EBA;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="190" as="sourcePoint" /><mxPoint x="1080" y="190" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m3" value="evaluate(input, store)" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#232F3E;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="224" as="sourcePoint" /><mxPoint x="745" y="224" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m5" value="ALLOW · authority ✓ · limit ✓ · SoD ✓" style="endArrow=block;dashed=1;html=1;fontSize=11;fontColor=#1F7A4D;strokeColor=#1F7A4D;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="745" y="258" as="sourcePoint" /><mxPoint x="450" y="258" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m6" value="INSERT decision + ledger append (hash chain) · COMMIT" style="endArrow=block;html=1;fontSize=11;fontColor=#147EBA;strokeColor=#147EBA;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="292" as="sourcePoint" /><mxPoint x="1080" y="292" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m7" value="allow (+ reason)" style="endArrow=block;dashed=1;html=1;fontSize=11;fontColor=#1F7A4D;strokeColor=#1F7A4D;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="326" as="sourcePoint" /><mxPoint x="155" y="326" as="targetPoint" /></mxGeometry></mxCell>
+
+        <mxCell id="divs" style="endArrow=none;dashed=1;html=1;strokeColor=#C9CFCD;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="70" y="356" as="sourcePoint" /><mxPoint x="1160" y="356" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="b2" value="② the same agent settles the deal it just captured — DENY" style="text;html=1;align=left;fontSize=12;fontStyle=2;fontColor=#B0271F;" vertex="1" parent="sx1"><mxGeometry x="70" y="366" width="520" height="20" as="geometry" /></mxCell>
+        <mxCell id="m8" value="POST decide {approve_settlement · SAME DEAL-CR-9001}" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#6E1D24;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="155" y="398" as="sourcePoint" /><mxPoint x="450" y="398" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m9" value="evaluate → prior capture_trade by this actor on this resource" style="endArrow=block;html=1;fontSize=11;fontColor=#14171A;strokeColor=#232F3E;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="432" as="sourcePoint" /><mxPoint x="745" y="432" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m10" value="DENY · SOD-FBO-01 (front office cannot be back office)" style="endArrow=block;dashed=1;html=1;fontSize=11;fontColor=#B0271F;strokeColor=#B0271F;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="745" y="466" as="sourcePoint" /><mxPoint x="450" y="466" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="m11" value="deny + reason + rule id (sealed to ledger)" style="endArrow=block;dashed=1;html=1;fontSize=11;fontColor=#B0271F;strokeColor=#B0271F;" edge="1" parent="sx1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="500" as="sourcePoint" /><mxPoint x="155" y="500" as="targetPoint" /></mxGeometry></mxCell>
+
+        <mxCell id="xrnote" value="③ cross-region (the DSQL beat): the same decision path on a multi-Region cluster — ALLOW in us-east-1, revoke, then the identical action in us-west-2 returns DENY with zero stale read.  /api/demo/cross-region" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#EEF1F0;strokeColor=#147EBA;fontColor=#14171A;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;dashed=1;" vertex="1" parent="sx1"><mxGeometry x="70" y="600" width="1090" height="56" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+</mxfile>
