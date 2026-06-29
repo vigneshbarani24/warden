@@ -62,7 +62,7 @@ TypeScript · Next.js 16 (App Router) · React 19 · Tailwind v4 · Amazon Auror
 
 ## Links
 - **Live app:** https://warden-khaki.vercel.app  (try `/console` → Simulation → Play; then Cross-region → Run)
-- **Repo:** <add the public GitHub URL>
+- **Repo:** https://github.com/vigneshbarani24/warden
 - **Demo video:** <add the YouTube link>
 - **Vercel Team ID:** `<paste from your Vercel dashboard or local .vercel/project.json — deliberately kept out of the public repo>`
 - **Screenshots to capture:** (1) the Decision Inspector showing the SOD-FBO-01 deny; (2) the ledger Verify→Tamper break; (3) the Cross-region "✓ strongly consistent" result; (4) the AWS DSQL console showing the two ACTIVE multi-Region clusters (proof of AWS DB usage).
