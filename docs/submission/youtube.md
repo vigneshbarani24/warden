@@ -25,11 +25,12 @@ Why Amazon Aurora DSQL: a revoked authority has to be denied in every region ins
 
 Chapters:
 0:00 The problem — valid in the ERP, illegal in the business
-0:15 What Warden is
-0:30 Live: an agent books a deal, then tries to settle its own deal → denied (SOD-FBO-01)
-1:15 The defensible record — verify the chain, then tamper, then watch it break
-1:45 Under the hood — Amazon Aurora DSQL, active-active across regions
-2:15 Impact
+0:15 Two apps: a real AI agent, and Warden
+0:28 Live: the agent books a $4.2M deal → allowed and sealed
+0:52 The same agent tries to settle its own deal → denied (SOD-FBO-01)
+1:35 The defensible record — verify, tamper, watch the chain break
+2:00 Under the hood — Amazon Aurora DSQL, active-active across regions
+2:30 Impact
 
 Stack: Next.js + TypeScript on Vercel · Amazon Aurora DSQL (multi-Region active-active) · pg + IAM-token auth.
 
