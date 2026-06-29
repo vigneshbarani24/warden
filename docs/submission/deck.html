@@ -77,6 +77,16 @@
     font-size:15px;line-height:1.5;padding:14px 22px;display:none;z-index:11;border-top:1px solid #2a2f35;max-height:38vh;overflow:auto}
   #notes b{color:#7fd1a0}
   #hint{position:fixed;bottom:2.2vmin;left:2.6vmin;font-family:var(--mono);font-size:1.4vmin;color:#5a6470;z-index:10}
+  /* why-DSQL comparison table */
+  .cmp{width:100%;border-collapse:collapse;margin-top:3vmin;font-size:1.95vmin}
+  .cmp th,.cmp td{text-align:left;padding:1.5vmin 1.6vmin;border-bottom:1px solid var(--line);vertical-align:middle}
+  .cmp th{font-family:var(--mono);font-size:1.4vmin;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);font-weight:500}
+  .cmp td:first-child{font-weight:600}
+  .cmp .yes{color:var(--allow);font-family:var(--mono);font-size:1.7vmin}
+  .cmp .no{color:var(--deny);font-family:var(--mono);font-size:1.7vmin}
+  .cmp tr.win td{background:#F6EFE9}
+  .cmp tr.win td:first-child{box-shadow:inset 3px 0 0 var(--seal)}
+  .footnote{font-family:var(--mono);font-size:1.55vmin;color:var(--faint);margin-top:2.6vmin;max-width:90ch}
 </style>
 </head>
 <body>
@@ -159,12 +169,25 @@
     <p class="sub">No foreign keys, no sequences — integrity enforced in-transaction; ids are client UUIDs. The grant lock is what makes a concurrent revoke abort instead of approving stale.</p>
   </section>
 
-  <!-- 8 — LIVE CLIP: cross-region + why DSQL -->
-  <section class="slide clip" data-notes="Why DSQL? It's active-active across regions. Allow a trade in Virginia, revoke the authority, and Oregon denies the identical action immediately — no stale read. That's the property the whole product rests on, and DSQL is the only AWS-native database that gives it with full SQL transactions.">
-    <div class="kicker">▶ Live — why Amazon Aurora DSQL</div>
+  <!-- 8 — WHY AURORA DSQL (the winning slide) -->
+  <section class="slide" data-notes="Why DSQL? Warden's promise is that a revoked authority is denied in every region, instantly — no stale read ever approves it. That needs two things at once: synchronous active-active strong consistency, AND a real SQL transaction with row locks. DynamoDB's multi-Region strong-consistency mode has the consistency but no transactions. Aurora Global Database has the transactions, but its replica reads can be stale. Aurora DSQL is the only AWS-native database that gives both — and that's the whole reason Warden is correct.">
+    <div class="kicker">Why Amazon Aurora DSQL · the database is the product</div>
+    <h2>The one AWS database that does <span class="accent">both</span>.</h2>
+    <p class="sub">Warden's promise — a revoked authority denied in every region, instantly — needs synchronous active-active strong consistency <em>and</em> a real SQL transaction with row locks. Each AWS-native alternative fails one half:</p>
+    <table class="cmp">
+      <tr><th>AWS-native option</th><th>Strong multi-Region consistency</th><th>SQL txn + <span class="mono">FOR UPDATE</span></th></tr>
+      <tr><td>DynamoDB global tables (MRSC)</td><td class="yes">✓ yes</td><td class="no">✕ no — MRSC has no transactions</td></tr>
+      <tr><td>Aurora PostgreSQL Global Database</td><td class="no">✕ no — replica reads can be stale</td><td class="yes">✓ yes</td></tr>
+      <tr class="win"><td>Amazon Aurora DSQL</td><td class="yes">✓ yes — zero lag on commit</td><td class="yes">✓ yes — Postgres + FOR UPDATE</td></tr>
+    </table>
+    <p class="footnote">Honest scope: not "only DSQL is strongly consistent" — Spanner and CockroachDB are too. The claim is narrower and survives an expert: the only <b>AWS-native</b> database that gives both, which is exactly what this PDP needs.</p>
+  </section>
+
+  <!-- 9 — LIVE CLIP: cross-region (the proof) -->
+  <section class="slide clip" data-notes="And here it is, live. Allow a $2M trade in Virginia, revoke the authority, and the identical action in Oregon is denied immediately — no stale read. The claim, proven across two AWS regions.">
+    <div class="kicker">▶ Live — the proof, across regions</div>
     <h2>Revoked here. Denied there. Instantly.</h2>
     <p class="lead">Allow a $2M trade in <span class="mono">us-east-1</span> → revoke the mandate → the identical action in <span class="mono">us-west-2</span> is denied, with no stale read.</p>
-    <p class="sub">The only AWS-native database giving synchronous, active-active strong consistency <em>and</em> the <span class="mono">SELECT … FOR UPDATE</span> transaction this decision needs.</p>
     <div class="clipbar"><span class="dot"></span> cut to screen recording — console: Cross-region → Run</div>
   </section>
 

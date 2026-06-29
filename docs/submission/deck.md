@@ -28,11 +28,12 @@ click-by-click), then drop them between slides. No flawless one-take needed.
 | 5 | **▶ LIVE — the split view.** Clip: agent (left) + console (right). Capture $4.2M DEAL-CR-9001 → ALLOW (seals on right); settle same deal → DENY · SOD-FBO-01 → agent halts. (Shot list in `video-script.md`.) | "Here's a real agent. It books a four-point-two-million-dollar deal — Warden allows it, and seals it on the right. Then it tries to settle the deal it just booked. Warden denies it — SOD-FBO-01 — and the agent halts. No retry, no workaround." | Technical · Design · Impact |
 | 6 | **▶ LIVE — the defensible record.** Clip: console Verify (green) → Tamper → Verify (red break). | "Every verdict is hash-chained. Verify — intact. Tamper with one sealed row, verify again — the break is caught at the exact sequence. Not just what was decided. Why." | Technical · Design |
 | 7 | **Architecture.** Embed `docs/warden-diagrams.drawio` page ② (or page ③ "how the agent works"). agent → @warden/sdk → Warden PDP (one txn, FOR UPDATE, withRetry) → Aurora DSQL (multi-Region) + ledger. | "Any agent calls one HTTP contract. Warden resolves authority up the org hierarchy, locks the grant for update, evaluates, and seals the verdict — all in one transaction on Amazon Aurora DSQL." | Technical |
-| 8 | **▶ LIVE — cross-region + why DSQL.** Clip: Cross-region → Run → ALLOW us-east-1 → revoke → DENY us-west-2 · "strongly consistent." Slide overlay: the one-sentence why. | "Why DSQL? It's active-active across regions. Allow a trade in Virginia, revoke the authority, and Oregon denies the identical action immediately — no stale read. That's the property the whole product rests on, and DSQL is the only AWS-native database that gives it with full SQL transactions." | Technical · Originality |
-| 9 | **Impact + what's next.** "Govern the action before it happens — or explain it at the audit." Monetization one-liner; roadmap (DB-enforced immutability) as *next*. | "Govern the action before it happens, or explain it at the audit. Warden's live today, and any agent can call the same contract." | Impact |
-| 10 | **Close card.** warden-khaki.vercel.app · github.com/vigneshbarani24/warden · "Built on Amazon Aurora DSQL + Vercel." | *(silent / 2s)* | — |
+| 8 | **Why Amazon Aurora DSQL — the winning slide.** A 3-row comparison: DynamoDB MRSC (consistent, no transactions), Aurora Global (transactions, stale reads), **Aurora DSQL (both)**. Plus the honest-scope footnote. | "Why DSQL? A revoked authority has to be denied in every region, instantly — that needs strong active-active consistency AND a real SQL transaction with row locks. DynamoDB's strong-consistency mode has the consistency but no transactions. Aurora Global has the transactions but its replica reads can be stale. Aurora DSQL is the only AWS-native database that gives both — and that's the whole reason Warden is correct." | Technical · Originality |
+| 9 | **▶ LIVE — cross-region (the proof).** Clip: Cross-region → Run → ALLOW us-east-1 → revoke → DENY us-west-2 · "strongly consistent." | "And here it is, live. Allow a $2M trade in Virginia, revoke the authority, and the identical action in Oregon is denied immediately — no stale read. The claim, proven across two AWS regions." | Technical · Originality |
+| 10 | **Impact + what's next.** "Govern the action before it happens — or explain it at the audit." Monetization one-liner; roadmap (DB-enforced immutability) as *next*. | "Govern the action before it happens, or explain it at the audit. Warden's live today, and any agent can call the same contract." | Impact |
+| 11 | **Close card.** warden-khaki.vercel.app · github.com/vigneshbarani24/warden · "Built on Amazon Aurora DSQL + Vercel." | *(silent / 2s)* | — |
 
-**Running time:** ~2:40. Slides 2–4 move fast (story); 5, 6, 8 are the live clips (the meat); 7 is the diagram.
+**Running time:** ~2:55 (tight). Slides 2–4 move fast (story); 5, 6, 9 are the live clips; 7 architecture; **8 is the why-DSQL argument** (the panel's favourite). To stay safely under 3:00, cut the optional ESCALATE beat in clip 5.
 
 ---
 
@@ -40,7 +41,7 @@ click-by-click), then drop them between slides. No flawless one-take needed.
 - **Technological Implementation** — slides 4, 5, 6, 7, 8 (one-txn decide, FOR UPDATE, hash chain, multi-Region DSQL).
 - **Design** — the deck matches the console palette; slides 5–6 show the designed console.
 - **Impact & Real-world** — slides 2, 3, 9 (felt pain, the stakes, monetization).
-- **Originality** — slides 3, 8 ("controls were in the latency"; DB-as-thesis).
+- **Originality** — slides 3, 8 ("controls were in the latency"; DB-as-thesis: the why-DSQL comparison).
 - **Hackathon must-haves** — pain/for-whom/why (2–3), footage of working app (5, 6, 8), AWS DB named + shown (7, 8).
 
 ## Production notes

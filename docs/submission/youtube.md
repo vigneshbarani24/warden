@@ -28,9 +28,10 @@ Chapters:
 0:15 Two apps: a real AI agent, and Warden
 0:28 Live: the agent books a $4.2M deal → allowed and sealed
 0:52 The same agent tries to settle its own deal → denied (SOD-FBO-01)
-1:35 The defensible record — verify, tamper, watch the chain break
-2:00 Under the hood — Amazon Aurora DSQL, active-active across regions
-2:30 Impact
+1:30 The defensible record — verify, tamper, watch the chain break
+1:55 Why Amazon Aurora DSQL — the one database that does both
+2:15 Live: revoked in us-east-1, denied in us-west-2
+2:40 Impact
 
 Stack: Next.js + TypeScript on Vercel · Amazon Aurora DSQL (multi-Region active-active) · pg + IAM-token auth.
 
